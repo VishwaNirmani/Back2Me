@@ -1,8 +1,11 @@
-import { auth } from '@/firebaseConfig';
-import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import React, { useState } from 'react';
+import { auth } from "@/firebaseConfig";
+import { useRouter } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import React, { JSX, useState } from "react";
 import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
   Alert,
   ScrollView,
@@ -11,32 +14,37 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface LoginScreenProps {
+  onSwitch?: () => void;
+}
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ email: "", password: "" });
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { email: '', password: '' };
+    const newErrors = { email: "", password: "" };
 
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = "Email is invalid";
       isValid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
       isValid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
@@ -53,59 +61,71 @@ export default function LoginScreen() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       if (result.user) {
-        setEmail('');
-        setPassword('');
+        setEmail("");
+        setPassword("");
         setLoading(false);
-        router.replace('/(tabs)/home');
+        router.replace("/(tabs)/home");
       }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'An error occurred during login');
+      Alert.alert(
+        "Login Failed",
+        error.message || "An error occurred during login"
+      );
       setLoading(false);
     }
   };
 
   const handleSignupPress = () => {
-    router.push('/register');
+    router.push("/register");
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Back2Me</Text>
-        <Text style={styles.subtitle}>Welcome Back</Text>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.header}></View>
+        <Text style={styles.title}>Welcome Back</Text>
+
+        {/* Brand Logo Section */}
+        <View style={styles.logoWrapper}>
+          <Image
+            source={require("../../assets/images/logo.jpeg")}
+            style={styles.logo}
+          />
+        </View>
 
         <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={[styles.input, errors.email && styles.inputError]}
+            placeholder="Email"
+            placeholderTextColor="#A0A0A0"
+            value={email}
+            onChangeText={setEmail}
+            editable={!loading}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {errors.email ? (
+            <Text style={styles.errorText}>{errors.email}</Text>
+          ) : null}
+          <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholder="Enter your email"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              editable={!loading}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={[styles.input, errors.password && styles.inputError]}
-              placeholder="Enter your password"
-              placeholderTextColor="#999"
+              style={styles.flexInput}
+              placeholder="Password"
+              placeholderTextColor="#A0A0A0"
               value={password}
               onChangeText={setPassword}
               editable={!loading}
               secureTextEntry
             />
-            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+            {errors.password ? (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            ) : null}
           </View>
 
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.buttonDisabled]}
+            style={styles.button}
             onPress={handleLogin}
             disabled={loading}
             activeOpacity={0.7}
@@ -113,103 +133,86 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={styles.buttonText}>Login</Text>
             )}
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <TouchableOpacity>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={handleSignupPress} disabled={loading}>
-            <Text style={styles.signupLink}>Sign Up</Text>
+            <Text style={styles.footerText}>
+              Do not have an account?{" "}
+              <Text style={styles.boldText}>Sign Up</Text>
+            </Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-  },
-  content: {
-    padding: 20,
-    paddingHorizontal: 20,
+  container: { flex: 1, backgroundColor: "#F8F9FB" },
+
+  header: {
+    height: 140,
+    backgroundColor: "#48b1a8",
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1a1a1a',
+    textAlign: "center",
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginTop: 30,
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 40,
-  },
-  form: {
-    marginBottom: 30,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
-  },
+  logoWrapper: { alignItems: "center", marginVertical: 50 },
+  logo: { width: 190, height: 100, borderRadius: 10 },
+  form: { width: "100%" },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    backgroundColor: "white",
+    height: 55,
+    borderRadius: 12,
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    marginBottom: 15,
     fontSize: 16,
-    backgroundColor: '#fff',
-    color: '#1a1a1a',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  inputError: {
-    borderColor: '#ff4444',
-    backgroundColor: '#fff5f5',
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    height: 55,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    marginBottom: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  errorText: {
-    color: '#ff4444',
-    fontSize: 12,
-    marginTop: 5,
-  },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
+  flexInput: { flex: 1, fontSize: 16 },
+  chevron: { color: "#A0A0A0", fontSize: 18 },
+  button: {
+    backgroundColor: "#48b1a8",
+    height: 55,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 10,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
+  forgotText: { textAlign: "center", color: "#707070", marginTop: 15 },
+  footerText: { textAlign: "center", color: "#707070", marginTop: 15 },
+  boldText: { color: "#1A1A1A", fontWeight: "600" },
+  errorText: { color: "#ff4444", fontSize: 12, marginTop: 5 },
+  inputError: { borderColor: "#ff4444", backgroundColor: "#fff5f5" },
 });
