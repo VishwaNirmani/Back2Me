@@ -1,20 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { View } from 'react-native';
+
+const THEME = '#2FB9B0';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+
         tabBarStyle: {
-          height: 65,
-          paddingBottom: 8,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 6,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 0,
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOpacity: 0.08,
+          shadowRadius: 10,
         },
-        tabBarActiveTintColor: '#3B82F6',
+
+        tabBarActiveTintColor: THEME,
         tabBarInactiveTintColor: '#9CA3AF',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
       }}
     >
+      {/* HOME */}
       <Tabs.Screen
         name="home"
         options={{
@@ -29,6 +44,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* ALERTS */}
       <Tabs.Screen
         name="notifications"
         options={{
@@ -43,19 +59,22 @@ export default function TabLayout() {
         }}
       />
 
+      {/* REPORT */}
       <Tabs.Screen
         name="report"
         options={{
-          title: '',
-          tabBarLabel: '',
-          tabBarIcon: () => (
-            <View style={{ marginTop: -12 }}>
-              <Ionicons name="add-circle" size={44} color="#3B82F6" />
-            </View>
+          title: 'Report',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'add-circle' : 'add-circle-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
 
+      {/* PROFILE */}
       <Tabs.Screen
         name="profile"
         options={{
