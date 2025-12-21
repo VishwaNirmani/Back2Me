@@ -8,11 +8,14 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MapPin, ShieldCheck } from 'lucide-react-native';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -96,53 +99,71 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Back2Me</Text>
-        <Text style={styles.subtitle}>Create Account</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Create Account</Text>
+      </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          placeholderTextColor="#999"
-          value={fullName}
-          onChangeText={setFullName}
-          editable={!loading}
-          autoCapitalize="words"
-        />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#A0A0A0"
+            value={fullName}
+            onChangeText={setFullName}
+            editable={!loading}
+            autoCapitalize="words"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#A0A0A0"
+            value={email}
+            onChangeText={setEmail}
+            editable={!loading}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#A0A0A0"
+            value={password}
+            onChangeText={setPassword}
+            editable={!loading}
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor="#A0A0A0"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            editable={!loading}
+            secureTextEntry
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          editable={!loading}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+          <View style={styles.inputWithIcon}>
+            <TextInput
+              style={{ flex: 1, fontSize: 16 }}
+              placeholder="City (Autocomplete)"
+              placeholderTextColor="#A0A0A0"
+            />
+            <MapPin size={20} color="#48b1a8" />
+          </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          editable={!loading}
-          secureTextEntry
-        />
+          <View style={styles.permissionRow}>
+            <ShieldCheck size={22} color="#48b1a8" />
+            <Text style={styles.permissionText}>Allow location permission</Text>
+            <Switch
+              trackColor={{ false: "#E0E0E0", true: "#48b1a8" }}
+              thumbColor={"#F4F4F4"}
+              value={true}
+            />
+          </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          placeholderTextColor="#999"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          editable={!loading}
-          secureTextEntry
-        />
-
-        <TouchableOpacity
+          <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleRegister}
           disabled={loading}
@@ -154,79 +175,71 @@ export default function RegisterScreen() {
           )}
         </TouchableOpacity>
 
-        <View style={styles.loginContainer}>
-          <Text style={styles.normalText}>Already have an account? </Text>
           <TouchableOpacity onPress={() => router.back()} disabled={loading}>
-            <Text style={styles.loginText}>Login</Text>
+            <Text style={styles.footerText}>
+              Already have an account?{" "}
+              <Text style={styles.boldText}>Login</Text>
+            </Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    paddingVertical: 20,
+  container: { flex: 1, backgroundColor: "#F8F9FB" },
+  header: {
+    height: 140,
+    backgroundColor: "#48b1a8",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  content: {
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1a1a1a',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 30,
-  },
+  headerTitle: { color: "white", fontSize: 28, fontWeight: "600" },
+  scrollContent: { paddingHorizontal: 30, paddingVertical: 30 },
+  form: { width: "100%" },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    backgroundColor: "white",
+    height: 55,
+    borderRadius: 12,
     paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
     marginBottom: 15,
-    backgroundColor: '#fff',
-    color: '#1a1a1a',
-  },
-  button: {
-    backgroundColor: '#07C75F',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  inputWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    height: 55,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  permissionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
+    paddingHorizontal: 5,
+  },
+  permissionText: { flex: 1, marginLeft: 10, color: "#606060", fontSize: 15 },
+  button: {
+    backgroundColor: "#48b1a8",
+    height: 55,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 20,
   },
-  normalText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  loginText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
+  footerText: { textAlign: "center", color: "#707070", marginTop: 25 },
+  boldText: { color: "#1A1A1A", fontWeight: "600" },
+  buttonDisabled: { opacity: 0.6},
 });
