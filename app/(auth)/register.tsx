@@ -94,7 +94,23 @@ export default function RegisterScreen() {
       );
     } catch (error: any) {
       setLoading(false);
-      Alert.alert('Registration Failed', error.message || 'Something went wrong');
+      
+      // Handle specific Firebase errors
+      let errorMessage = 'Something went wrong';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please login instead.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address format.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Use at least 6 characters.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/Password authentication is not enabled. Contact support.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Registration Failed', errorMessage);
     }
   };
 
