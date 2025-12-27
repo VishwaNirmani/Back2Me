@@ -1,16 +1,61 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from 'react-native';
+import { auth, db } from '@/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
 
 const THEME = '#2FB9B0';
 
 export default function Profile() {
+  const router = useRouter();
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data());
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={THEME} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -61,13 +106,13 @@ export default function Profile() {
           </View>
 
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
-            John Doe
+            {userData?.fullName || auth.currentUser?.displayName || 'User'}
           </Text>
           <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
-            Colombo, Sri Lanka
+            {userData?.city || 'Location not set'}
           </Text>
           <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
-            john.doe@gmail.com
+            {userData?.email || auth.currentUser?.email || 'No email'}
           </Text>
 
           {/* STATS */}
@@ -130,9 +175,9 @@ export default function Profile() {
             paddingVertical: 6,
           }}
         >
-          <SettingItem icon="settings-outline" label="Settings" />
-          <SettingItem icon="help-circle-outline" label="Help & Support" />
-          <SettingItem icon="log-out-outline" label="Logout" danger />
+          <SettingItem icon="settings-outline" label="Settings" onPress={() => {}} />
+          <SettingItem icon="help-circle-outline" label="Help & Support" onPress={() => {}} />
+          <SettingItem icon="log-out-outline" label="Logout" danger onPress={handleLogout} />
         </View>
 
         <View style={{ height: 30 }} />
@@ -147,12 +192,15 @@ const SettingItem = ({
   icon,
   label,
   danger,
+  onPress,
 }: {
   icon: any;
   label: string;
   danger?: boolean;
+  onPress?: () => void;
 }) => (
   <TouchableOpacity
+    onPress={onPress}
     style={{
       flexDirection: 'row',
       alignItems: 'center',
