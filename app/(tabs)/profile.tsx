@@ -1,16 +1,16 @@
+import { auth, db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from 'react-native';
-import { auth, db } from '@/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
-import { useRouter } from 'expo-router';
 
 const THEME = '#2FB9B0';
 
@@ -18,6 +18,7 @@ export default function Profile() {
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'lost' | 'found'>('lost');
 
   useEffect(() => {
     loadUserData();
@@ -50,7 +51,14 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' }}>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: '#F3F4F6',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <ActivityIndicator size="large" color={THEME} />
       </SafeAreaView>
     );
@@ -65,17 +73,9 @@ export default function Profile() {
             backgroundColor: THEME,
             paddingVertical: 18,
             paddingHorizontal: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
           }}
         >
-          <Text
-            style={{
-              color: '#fff',
-              fontSize: 18,
-              fontWeight: '700',
-            }}
-          >
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>
             Profile
           </Text>
         </View>
@@ -108,21 +108,17 @@ export default function Profile() {
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
             {userData?.fullName || auth.currentUser?.displayName || 'User'}
           </Text>
+
           <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
             {userData?.city || 'Location not set'}
           </Text>
+
           <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
-            {userData?.email || auth.currentUser?.email || 'No email'}
+            {userData?.email || auth.currentUser?.email}
           </Text>
 
           {/* STATS */}
-          <View
-            style={{
-              flexDirection: 'row',
-              marginTop: 20,
-              gap: 12,
-            }}
-          >
+          <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
             {[
               { label: 'Lost', value: 3 },
               { label: 'Found', value: 2 },
@@ -155,15 +151,77 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* ACTION BUTTONS */}
-        <View style={{ marginHorizontal: 16 }}>
-          <TouchableOpacity style={primaryBtn}>
-            <Text style={primaryText}>My Found Items</Text>
+        {/* LOST / FOUND TABS */}
+        <View
+          style={{
+            marginHorizontal: 16,
+            backgroundColor: '#fff',
+            borderRadius: 14,
+            padding: 6,
+            flexDirection: 'row',
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => setActiveTab('lost')}
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor:
+                activeTab === 'lost' ? THEME : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{
+                color: activeTab === 'lost' ? '#fff' : '#6B7280',
+                fontWeight: '700',
+              }}
+            >
+              My Lost Items
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={secondaryBtn}>
-            <Text style={secondaryText}>Edit Profile</Text>
+          <TouchableOpacity
+            onPress={() => setActiveTab('found')}
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor:
+                activeTab === 'found' ? THEME : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{
+                color: activeTab === 'found' ? '#fff' : '#6B7280',
+                fontWeight: '700',
+              }}
+            >
+              My Found Items
+            </Text>
           </TouchableOpacity>
+        </View>
+
+        {/* TAB CONTENT */}
+        <View
+          style={{
+            backgroundColor: '#fff',
+            margin: 16,
+            borderRadius: 16,
+            padding: 16,
+          }}
+        >
+          {activeTab === 'lost' ? (
+            <Text style={{ color: '#6B7280' }}>
+              🔴 Lost items list will appear here
+            </Text>
+          ) : (
+            <Text style={{ color: '#6B7280' }}>
+              🟢 Found items list will appear here
+            </Text>
+          )}
         </View>
 
         {/* SETTINGS */}
@@ -175,9 +233,14 @@ export default function Profile() {
             paddingVertical: 6,
           }}
         >
-          <SettingItem icon="settings-outline" label="Settings" onPress={() => {}} />
-          <SettingItem icon="help-circle-outline" label="Help & Support" onPress={() => {}} />
-          <SettingItem icon="log-out-outline" label="Logout" danger onPress={handleLogout} />
+          <SettingItem icon="settings-outline" label="Settings" />
+          <SettingItem icon="help-circle-outline" label="Help & Support" />
+          <SettingItem
+            icon="log-out-outline"
+            label="Logout"
+            danger
+            onPress={handleLogout}
+          />
         </View>
 
         <View style={{ height: 30 }} />
@@ -226,34 +289,3 @@ const SettingItem = ({
     </Text>
   </TouchableOpacity>
 );
-
-/* ---------------- STYLES ---------------- */
-
-const primaryBtn = {
-  backgroundColor: THEME,
-  paddingVertical: 14,
-  borderRadius: 12,
-  alignItems: 'center' as const,
-  marginBottom: 10,
-};
-
-const primaryText = {
-  color: '#fff',
-  fontSize: 15,
-  fontWeight: '700' as const,
-};
-
-const secondaryBtn = {
-  backgroundColor: '#fff',
-  paddingVertical: 14,
-  borderRadius: 12,
-  alignItems: 'center' as const,
-  borderWidth: 1,
-  borderColor: THEME,
-};
-
-const secondaryText = {
-  color: THEME,
-  fontSize: 15,
-  fontWeight: '700' as const,
-};

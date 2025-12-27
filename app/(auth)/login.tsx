@@ -1,25 +1,20 @@
 import { auth } from "@/firebaseConfig";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import React, { JSX, useState } from "react";
+import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface LoginScreenProps {
-  onSwitch?: () => void;
-}
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -53,9 +48,7 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
@@ -87,7 +80,7 @@ export default function LoginScreen() {
         <View style={styles.header}></View>
         <Text style={styles.title}>Welcome Back</Text>
 
-        {/* Brand Logo Section */}
+        {/* Brand Logo */}
         <View style={styles.logoWrapper}>
           <Image
             source={require("../../assets/images/logo.jpeg")}
@@ -96,9 +89,11 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
+          {/* Email Field */}
+          <Text style={styles.label}>Email</Text>
           <TextInput
             style={[styles.input, errors.email && styles.inputError]}
-            placeholder="Email"
+            placeholder="Enter your email"
             placeholderTextColor="#A0A0A0"
             value={email}
             onChangeText={setEmail}
@@ -109,21 +104,23 @@ export default function LoginScreen() {
           {errors.email ? (
             <Text style={styles.errorText}>{errors.email}</Text>
           ) : null}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.flexInput}
-              placeholder="Password"
-              placeholderTextColor="#A0A0A0"
-              value={password}
-              onChangeText={setPassword}
-              editable={!loading}
-              secureTextEntry
-            />
-            {errors.password ? (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            ) : null}
-          </View>
 
+          {/* Password Field */}
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={[styles.input, errors.password && styles.inputError]}
+            placeholder="Enter your password"
+            placeholderTextColor="#A0A0A0"
+            value={password}
+            onChangeText={setPassword}
+            editable={!loading}
+            secureTextEntry
+          />
+          {errors.password ? (
+            <Text style={styles.errorText}>{errors.password}</Text>
+          ) : null}
+
+          {/* Login Button */}
           <TouchableOpacity
             style={styles.button}
             onPress={handleLogin}
@@ -137,14 +134,15 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
+          {/* Forgot Password */}
           <TouchableOpacity>
             <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
 
+          {/* Sign Up */}
           <TouchableOpacity onPress={handleSignupPress} disabled={loading}>
             <Text style={styles.footerText}>
-              Do not have an account?{" "}
-              <Text style={styles.boldText}>Sign Up</Text>
+              Do not have an account? <Text style={styles.boldText}>Sign Up</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -155,9 +153,8 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FB" },
-
   header: {
-    height: 140,
+    height: 90,
     backgroundColor: "#48b1a8",
     justifyContent: "center",
     alignItems: "center",
@@ -167,11 +164,12 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "700",
     color: "#1A1A1A",
-    marginTop: 30,
+    marginTop: 50,
   },
-  logoWrapper: { alignItems: "center", marginVertical: 50 },
-  logo: { width: 190, height: 100, borderRadius: 10 },
-  form: { width: "100%" },
+  logoWrapper: { alignItems: "center", marginVertical: 40 },
+  logo: { width: 180, height: 100, borderRadius: 10 },
+  form: { width: "85%", alignSelf: "center" },
+  label: { fontSize: 14, fontWeight: "500", color: "#333", marginBottom: 5 },
   input: {
     backgroundColor: "white",
     height: 55,
@@ -181,26 +179,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 2,
   },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    height: 55,
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    marginBottom: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  flexInput: { flex: 1, fontSize: 16 },
-  chevron: { color: "#A0A0A0", fontSize: 18 },
   button: {
     backgroundColor: "#48b1a8",
     height: 55,

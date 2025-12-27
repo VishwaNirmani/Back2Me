@@ -31,7 +31,7 @@ const ITEMS = [
     location: 'Kandy',
     time: '1h ago',
     image:
-      'https://images.unsplash.com/photo-1589994965851-a8ed025e4d6f?w=300',
+      'https://cdn.shopify.com/s/files/1/2245/3557/files/CSE-AS-ExtraKeys.png?v=1713479233',
   },
   {
     id: '3',

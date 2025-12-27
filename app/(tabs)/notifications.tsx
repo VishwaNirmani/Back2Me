@@ -27,7 +27,7 @@ const NEARBY_ITEMS = [
     status: 'Found',
     location: 'Kandy Railway Station',
     time: '3 hours ago',
-    image: 'https://images.unsplash.com/photo-1592286927505-1fed68c3e7dd?w=400',
+    image: 'https://www.apple.com/newsroom/images/2023/09/apple-unveils-iphone-15-pro-and-iphone-15-pro-max/tile/Apple-iPhone-15-Pro-lineup-hero-230912.jpg.landing-big_2x.jpg',
   },
   {
     id: '3',
@@ -43,7 +43,7 @@ const NEARBY_ITEMS = [
     status: 'Found',
     location: 'Bus Stand Kandy',
     time: '1 day ago',
-    image: 'https://images.unsplash.com/photo-1589994965851-a8ed025e4d6f?w=400',
+    image: 'https://cdn.shopify.com/s/files/1/2245/3557/files/CSE-AS-ExtraKeys.png?v=1713479233',
   },
 ];
 

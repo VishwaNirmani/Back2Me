@@ -2,6 +2,7 @@ import { auth, db } from '@/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { MapPin, ShieldCheck } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +16,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MapPin, ShieldCheck } from 'lucide-react-native';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -206,7 +206,8 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FB" },
   header: {
-    height: 140,
+    height: 90,
+    marginBottom: 40,
     backgroundColor: "#48b1a8",
     justifyContent: "center",
     alignItems: "center",
