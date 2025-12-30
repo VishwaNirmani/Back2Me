@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -10,6 +11,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 
 const THEME = '#2FB9B0';
@@ -23,6 +25,13 @@ export default function Profile() {
   useEffect(() => {
     loadUserData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+      return () => {};
+    }, [])
+  );
 
   const loadUserData = async () => {
     try {
@@ -100,9 +109,14 @@ export default function Profile() {
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 12,
+              overflow: 'hidden',
             }}
           >
-            <Ionicons name="person" size={42} color={THEME} />
+            {userData?.photoURL || auth.currentUser?.photoURL ? (
+              <Image source={{ uri: (userData?.photoURL || auth.currentUser?.photoURL) as string }} style={{ width: '100%', height: '100%' }} />
+            ) : (
+              <Ionicons name="person" size={42} color={THEME} />
+            )}
           </View>
 
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
@@ -116,6 +130,32 @@ export default function Profile() {
           <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
             {userData?.email || auth.currentUser?.email}
           </Text>
+
+          {userData?.phone ? (
+            <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+              📞 {userData.phone}
+            </Text>
+          ) : null}
+
+          {userData?.address ? (
+            <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+              📍 {userData.address}
+            </Text>
+          ) : null}
+
+          {/* EDIT PROFILE BUTTON */}
+          <TouchableOpacity
+            onPress={() => router.push('/profile/edit')}
+            style={{
+              marginTop: 16,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 10,
+              backgroundColor: THEME,
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Edit Profile</Text>
+          </TouchableOpacity>
 
           {/* STATS */}
           <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
