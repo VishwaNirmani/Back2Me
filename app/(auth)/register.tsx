@@ -77,27 +77,19 @@ export default function RegisterScreen() {
       setPassword('');
       setConfirmPassword('');
 
+      setLoading(false); // Stop loading immediately after success
+
       // Show success message then navigate
-      Alert.alert(
-        'Successfully Registered!',
-        'Your account has been created. Please login to continue.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setLoading(false);
-              // Navigate to login
-              router.replace('/(auth)/login');
-            },
-          },
-        ]
-      );
+      Alert.alert('Successfully Registered!', 'Redirecting to login...');
+      setTimeout(() => {
+        router.replace('/login');
+      }, 1500);
     } catch (error: any) {
       setLoading(false);
-      
+
       // Handle specific Firebase errors
       let errorMessage = 'Something went wrong';
-      
+
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered. Please login instead.';
       } else if (error.code === 'auth/invalid-email') {
@@ -109,7 +101,7 @@ export default function RegisterScreen() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       Alert.alert('Registration Failed', errorMessage);
     }
   };
@@ -180,16 +172,16 @@ export default function RegisterScreen() {
           </View>
 
           <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign Up</Text>
-          )}
-        </TouchableOpacity>
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Sign Up</Text>
+            )}
+          </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.back()} disabled={loading}>
             <Text style={styles.footerText}>
@@ -258,5 +250,5 @@ const styles = StyleSheet.create({
   buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
   footerText: { textAlign: "center", color: "#707070", marginTop: 25 },
   boldText: { color: "#1A1A1A", fontWeight: "600" },
-  buttonDisabled: { opacity: 0.6},
+  buttonDisabled: { opacity: 0.6 },
 });
