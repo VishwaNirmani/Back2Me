@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { signInAnonymously } from 'firebase/auth'; // Import Auth
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react'; // Import useEffect
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { signInAnonymously } from "firebase/auth"; // Import Auth
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useEffect, useState } from "react"; // Import useEffect
 import {
   ActivityIndicator,
   Alert,
@@ -12,19 +12,19 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from 'react-native';
-import { auth, db } from '../../firebaseConfig'; // Import auth from config
+  View,
+} from "react-native";
+import { auth, db } from "../../firebaseConfig"; // Import auth from config
 
-const THEME_COLOR = '#2FB9B0';
+const THEME_COLOR = "#2FB9B0";
 
-type ReportType = 'Lost' | 'Found';
+type ReportType = "Lost" | "Found";
 
 export default function ReportScreen() {
-  const [type, setType] = useState<ReportType>('Lost');
-  const [itemName, setItemName] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
+  const [type, setType] = useState<ReportType>("Lost");
+  const [itemName, setItemName] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,22 +42,22 @@ export default function ReportScreen() {
   };
 
   const resetForm = () => {
-    setType('Lost');
-    setItemName('');
-    setDescription('');
-    setLocation('');
+    setType("Lost");
+    setItemName("");
+    setDescription("");
+    setLocation("");
     setDate(new Date());
   };
 
   const submitReport = async () => {
     if (!itemName.trim() || !description.trim() || !location.trim()) {
-      Alert.alert('Missing Information', 'Please fill in all required fields.');
+      Alert.alert("Missing Information", "Please fill in all required fields.");
       return;
     }
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'reports'), {
+      await addDoc(collection(db, "reports"), {
         type,
         itemName: itemName.trim(),
         description: description.trim(),
@@ -66,12 +66,12 @@ export default function ReportScreen() {
         createdAt: serverTimestamp(),
       });
 
-      Alert.alert('Success', 'Your report has been submitted successfully!', [
-        { text: 'OK', onPress: resetForm },
+      Alert.alert("Success", "Your report has been submitted successfully!", [
+        { text: "OK", onPress: resetForm },
       ]);
     } catch (error: any) {
-      console.error('Error submitting report:', error);
-      Alert.alert('Error', `Failed to submit report: ${error.message}`);
+      console.error("Error submitting report:", error);
+      Alert.alert("Error", `Failed to submit report: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -83,21 +83,44 @@ export default function ReportScreen() {
         <Text style={styles.headerTitle}>New Report</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View>
           {/* Toggle Lost / Found */}
           <View style={styles.toggleContainer}>
             <TouchableOpacity
-              style={[styles.toggleButton, type === 'Lost' && styles.activeToggle]}
-              onPress={() => setType('Lost')}
+              style={[
+                styles.toggleButton,
+                type === "Lost" && styles.activeToggle,
+              ]}
+              onPress={() => setType("Lost")}
             >
-              <Text style={[styles.toggleText, type === 'Lost' && styles.activeToggleText]}>Lost</Text>
+              <Text
+                style={[
+                  styles.toggleText,
+                  type === "Lost" && styles.activeToggleText,
+                ]}
+              >
+                Lost
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleButton, type === 'Found' && styles.activeToggle]}
-              onPress={() => setType('Found')}
+              style={[
+                styles.toggleButton,
+                type === "Found" && styles.activeToggle,
+              ]}
+              onPress={() => setType("Found")}
             >
-              <Text style={[styles.toggleText, type === 'Found' && styles.activeToggleText]}>Found</Text>
+              <Text
+                style={[
+                  styles.toggleText,
+                  type === "Found" && styles.activeToggleText,
+                ]}
+              >
+                Found
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -105,7 +128,9 @@ export default function ReportScreen() {
           <View style={styles.card}>
             {/* Item Name */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Item Name <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>
+                Item Name <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Blue Backpack"
@@ -117,7 +142,9 @@ export default function ReportScreen() {
 
             {/* Description */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Description <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>
+                Description <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Describe details like color, brand, size..."
@@ -132,7 +159,9 @@ export default function ReportScreen() {
 
             {/* Location */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Location <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>
+                Location <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Central Station, Platform 3"
@@ -154,13 +183,15 @@ export default function ReportScreen() {
               </TouchableOpacity>
 
               {showPicker && (
+                <View style={styles.pickerWrapper}>
                 <DateTimePicker
                   value={date}
                   mode="date"
-                  display="default"
+                  display="spinner"
                   maximumDate={new Date()} // only past dates
                   onChange={handleDateChange}
                 />
+                </View>
               )}
             </View>
 
@@ -181,11 +212,18 @@ export default function ReportScreen() {
 
             {/* Submit Button */}
             <TouchableOpacity
-              style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+              style={[
+                styles.submitButton,
+                loading && styles.submitButtonDisabled,
+              ]}
               onPress={submitReport}
               disabled={loading}
             >
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Submit Report</Text>}
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Submit Report</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -196,27 +234,94 @@ export default function ReportScreen() {
 
 // ---------------- STYLES ----------------
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { backgroundColor: THEME_COLOR, paddingVertical: 16, alignItems: 'center' },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: "#F3F4F6" },
+  header: {
+    backgroundColor: THEME_COLOR,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
   scrollContent: { paddingBottom: 40 },
-  toggleContainer: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 12, padding: 4, marginHorizontal: 16, marginVertical: 10 },
-  toggleButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-  activeToggle: { backgroundColor: '#fff' },
-  toggleText: { fontSize: 16, fontWeight: '600', color: '#6B7280' },
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 4,
+    marginHorizontal: 16,
+    marginVertical: 10,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  activeToggle: { backgroundColor: "#fff" },
+  toggleText: { fontSize: 16, fontWeight: "600", color: "#6B7280" },
   activeToggleText: { color: THEME_COLOR },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginHorizontal: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  required: { color: '#EF4444' },
-  input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, fontSize: 16, color: '#1F2937' },
+  label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 8 },
+  required: { color: "#EF4444" },
+  input: {
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: "#1F2937",
+  },
   textArea: { height: 100 },
-  dateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12 },
-  dateText: { fontSize: 16, color: '#1F2937' },
-  photoContainer: { flexDirection: 'row', gap: 12 },
-  photoButton: { flex: 1, backgroundColor: '#F0FDFA', borderWidth: 1, borderColor: '#CCFBF1', borderRadius: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  photoButtonText: { fontSize: 12, color: THEME_COLOR, fontWeight: '500' },
-  submitButton: { backgroundColor: THEME_COLOR, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 10 },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  dateText: { fontSize: 16, color: "#1F2937" },
+  photoContainer: { flexDirection: "row", gap: 12 },
+  photoButton: {
+    flex: 1,
+    backgroundColor: "#F0FDFA",
+    borderWidth: 1,
+    borderColor: "#CCFBF1",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  photoButtonText: { fontSize: 12, color: THEME_COLOR, fontWeight: "500" },
+  submitButton: {
+    backgroundColor: THEME_COLOR,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 10,
+  },
   submitButtonDisabled: { opacity: 0.7 },
-  submitButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  submitButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  pickerWrapper: {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 12,
+  paddingVertical: 10,
+  marginTop: 10,
+}
+
 });
