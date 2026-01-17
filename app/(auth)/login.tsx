@@ -6,23 +6,32 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: "", password: "" });
 
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+  });
+
+  // ================= VALIDATION =================
   const validateForm = () => {
     let isValid = true;
     const newErrors = { email: "", password: "" };
@@ -31,7 +40,7 @@ export default function LoginScreen() {
       newErrors.email = "Email is required";
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = "Invalid email format";
       isValid = false;
     }
 
@@ -47,117 +56,167 @@ export default function LoginScreen() {
     return isValid;
   };
 
+  // ================= LOGIN =================
   const handleLogin = async () => {
     if (!validateForm()) return;
 
     setLoading(true);
+
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
       if (result.user) {
         setEmail("");
         setPassword("");
-        setLoading(false);
+        if (Platform.OS === "web") Keyboard.dismiss();
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {
-      Alert.alert(
-        "Login Failed",
-        error.message || "An error occurred during login"
-      );
+      console.log("Login Error:", error.code, error.message);
+
+      let errorMessage = "Login failed. Please try again.";
+
+      switch (error.code) {
+        case "auth/invalid-email":
+          errorMessage = "Invalid email address";
+          break;
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+          errorMessage = "Incorrect email or password";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Too many attempts. Please try again later.";
+          break;
+        default:
+          errorMessage = "Something went wrong. Please try again.";
+      }
+
+      Alert.alert("Login Failed", errorMessage);
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleSignupPress = () => {
-    router.push("/register");
-  };
-
+  // ================= UI =================
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={styles.header}></View>
-        <Text style={styles.title}>Welcome Back</Text>
-
-        {/* Brand Logo */}
-        <View style={styles.logoWrapper}>
-          <Image
-            source={require("../../assets/images/logo.jpeg")}
-            style={styles.logo}
-          />
-        </View>
-
-        <View style={styles.form}>
-          {/* Email Field */}
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder="Enter your email"
-            placeholderTextColor="#A0A0A0"
-            value={email}
-            onChangeText={setEmail}
-            editable={!loading}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {errors.email ? (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          ) : null}
-
-          {/* Password Field */}
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={[styles.input, errors.password && styles.inputError]}
-            placeholder="Enter your password"
-            placeholderTextColor="#A0A0A0"
-            value={password}
-            onChangeText={setPassword}
-            editable={!loading}
-            secureTextEntry
-          />
-          {errors.password ? (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          ) : null}
-
-          {/* Login Button */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.7}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              {/* Header */}
+              <View style={styles.header} />
 
-          {/* Forgot Password */}
-          <TouchableOpacity>
-            <Text style={styles.forgotText}>Forgot password?</Text>
-          </TouchableOpacity>
+              {/* Title */}
+              <Text style={styles.title}>Welcome Back</Text>
 
-          {/* Sign Up */}
-          <TouchableOpacity onPress={handleSignupPress} disabled={loading}>
-            <Text style={styles.footerText}>
-              Do not have an account? <Text style={styles.boldText}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+              {/* Logo */}
+              <View style={styles.logoWrapper}>
+                <Image
+                  source={require("../../assets/images/logo.jpeg")}
+                  style={styles.logo}
+                />
+              </View>
+
+              {/* Form */}
+              <View style={styles.form}>
+                {/* Email */}
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={[styles.input, errors.email && styles.inputError]}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#A0A0A0"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!loading}
+                />
+                {errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+
+                {/* Password */}
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={[styles.input, errors.password && styles.inputError]}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#A0A0A0"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  editable={!loading}
+                />
+                {errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+
+                {/* Login Button */}
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={handleLogin}
+                  disabled={loading}
+                  activeOpacity={0.7}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>Login</Text>
+                  )}
+                </TouchableOpacity>
+
+                {/* Forgot Password */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (Platform.OS === "web") Keyboard.dismiss();
+                    router.push("/forgot-password");
+                  }}
+                >
+                  <Text style={styles.forgotText}>Forgot password?</Text>
+                </TouchableOpacity>
+
+                {/* Register */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (Platform.OS === "web") Keyboard.dismiss();
+                    router.push("/register");
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.footerText}>
+                    Do not have an account?{" "}
+                    <Text style={styles.boldText}>Sign Up</Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
 
+// ================= STYLES =================
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FB" },
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FB",
+  },
   header: {
     height: 90,
     backgroundColor: "#48b1a8",
-    justifyContent: "center",
-    alignItems: "center",
   },
   title: {
     textAlign: "center",
@@ -166,22 +225,37 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     marginTop: 50,
   },
-  logoWrapper: { alignItems: "center", marginVertical: 40 },
-  logo: { width: 180, height: 100, borderRadius: 10 },
-  form: { width: "85%", alignSelf: "center" },
-  label: { fontSize: 14, fontWeight: "500", color: "#333", marginBottom: 5 },
+  logoWrapper: {
+    alignItems: "center",
+    marginVertical: 40,
+  },
+  logo: {
+    width: 180,
+    height: 100,
+    borderRadius: 10,
+  },
+  form: {
+    width: "85%",
+    alignSelf: "center",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 5,
+  },
   input: {
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     height: 55,
     borderRadius: 12,
     paddingHorizontal: 15,
     marginBottom: 15,
     fontSize: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
     elevation: 2,
+  },
+  inputError: {
+    borderColor: "#ff4444",
+    backgroundColor: "#fff5f5",
   },
   button: {
     backgroundColor: "#48b1a8",
@@ -191,10 +265,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
-  forgotText: { textAlign: "center", color: "#707070", marginTop: 15 },
-  footerText: { textAlign: "center", color: "#707070", marginTop: 15 },
-  boldText: { color: "#1A1A1A", fontWeight: "600" },
-  errorText: { color: "#ff4444", fontSize: 12, marginTop: 5 },
-  inputError: { borderColor: "#ff4444", backgroundColor: "#fff5f5" },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  forgotText: {
+    textAlign: "center",
+    color: "#707070",
+    marginTop: 15,
+  },
+  footerText: {
+    textAlign: "center",
+    color: "#707070",
+    marginTop: 15,
+  },
+  boldText: {
+    color: "#1A1A1A",
+    fontWeight: "600",
+  },
+  errorText: {
+    color: "#ff4444",
+    fontSize: 12,
+    marginBottom: 10,
+  },
 });

@@ -1,32 +1,62 @@
-import { auth, db } from '@/firebaseConfig';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { MapPin, ShieldCheck } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { auth, db } from '@/firebaseConfig';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+
 export default function RegisterScreen() {
   const router = useRouter();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [city, setCity] = useState('');
+  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [locationCoords, setLocationCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Request location permission
+  const requestLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Location access is required.');
+      setLocationEnabled(false);
+      return;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
+    setLocationCoords({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    });
+  };
+
+  // ================= REGISTER =================
   const handleRegister = async () => {
-    // Basic validation
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert('Error', 'All fields are required');
       return;
@@ -37,8 +67,15 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    // Strong password regex
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+
+    if (!strongPasswordRegex.test(password)) {
+      Alert.alert(
+        'Weak Password',
+        'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+      );
       return;
     }
 
@@ -49,206 +86,200 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
-      // Create user account
+
+      // Create Auth account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Update user profile
+      // Update profile
       await updateProfile(user, {
         displayName: fullName.trim(),
       });
 
-      // Save to Firestore
+      // Save user profile to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         fullName: fullName.trim(),
         email: email.trim(),
+        city: city.trim(),
+        locationEnabled: locationEnabled,
+        location: locationCoords,
         createdAt: serverTimestamp(),
         profileImage: null,
         bio: '',
       });
 
-      // Sign out
       await auth.signOut();
-
-      // Clear form
-      setFullName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-
-      setLoading(false); // Stop loading immediately after success
-
-      // Show success message then navigate
-      Alert.alert('Successfully Registered!', 'Redirecting to login...');
-      setTimeout(() => {
-        router.replace('/login');
-      }, 1500);
+      setLoading(false);
+      Alert.alert('Success', 'Account created successfully!');
+      router.replace('/login');
     } catch (error: any) {
       setLoading(false);
 
-      // Handle specific Firebase errors
       let errorMessage = 'Something went wrong';
 
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already registered. Please login instead.';
+        errorMessage = 'Email already registered';
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address format.';
+        errorMessage = 'Invalid email address';
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Use at least 6 characters.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/Password authentication is not enabled. Contact support.';
-      } else if (error.message) {
-        errorMessage = error.message;
+        errorMessage = 'Password is too weak';
       }
 
       Alert.alert('Registration Failed', errorMessage);
     }
   };
 
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Create Account</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor="#A0A0A0"
-            value={fullName}
-            onChangeText={setFullName}
-            editable={!loading}
-            autoCapitalize="words"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#A0A0A0"
-            value={email}
-            onChangeText={setEmail}
-            editable={!loading}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#A0A0A0"
-            value={password}
-            onChangeText={setPassword}
-            editable={!loading}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor="#A0A0A0"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            editable={!loading}
-            secureTextEntry
-          />
-
-          <View style={styles.inputWithIcon}>
-            <TextInput
-              style={{ flex: 1, fontSize: 16 }}
-              placeholder="City (Autocomplete)"
-              placeholderTextColor="#A0A0A0"
-            />
-            <MapPin size={20} color="#48b1a8" />
-          </View>
-
-          <View style={styles.permissionRow}>
-            <ShieldCheck size={22} color="#48b1a8" />
-            <Text style={styles.permissionText}>Allow location permission</Text>
-            <Switch
-              trackColor={{ false: "#E0E0E0", true: "#48b1a8" }}
-              thumbColor={"#F4F4F4"}
-              value={true}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleRegister}
-            disabled={loading}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, padding: 30 }}
+            keyboardShouldPersistTaps="handled"
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign Up</Text>
-            )}
-          </TouchableOpacity>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Create Account</Text>
+            </View>
 
-          <TouchableOpacity onPress={() => router.back()} disabled={loading}>
-            <Text style={styles.footerText}>
-              Already have an account?{" "}
-              <Text style={styles.boldText}>Login</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            {/* Form */}
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                value={fullName}
+                onChangeText={setFullName}
+                editable={!loading}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!loading}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                editable={!loading}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                editable={!loading}
+              />
+
+              <View style={styles.inputWithIcon}>
+                <TextInput
+                  style={{ flex: 1, fontSize: 16 }}
+                  placeholder="City"
+                  value={city}
+                  onChangeText={setCity}
+                />
+                <MapPin size={20} color="#48b1a8" />
+              </View>
+
+              <View style={styles.permissionRow}>
+                <ShieldCheck size={22} color="#48b1a8" />
+                <Text style={styles.permissionText}>Allow location access</Text>
+                <Switch
+                  value={locationEnabled}
+                  onValueChange={(value) => {
+                    setLocationEnabled(value);
+                    if (value) requestLocation();
+                    else setLocationCoords(null);
+                  }}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleRegister}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Sign Up</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={styles.footerText}>
+                  Already have an account? <Text style={styles.boldText}>Login</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FB" },
+  container: { flex: 1, backgroundColor: '#F8F9FB' },
   header: {
-    height: 90,
-    marginBottom: 40,
-    backgroundColor: "#48b1a8",
-    justifyContent: "center",
-    alignItems: "center",
+    height: 70,
+    width: '100%',
+    backgroundColor: '#48b1a8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  headerTitle: { color: "white", fontSize: 28, fontWeight: "600" },
-  scrollContent: { paddingHorizontal: 30, paddingVertical: 30 },
-  form: { width: "100%" },
+  headerTitle: { color: 'white', fontSize: 28, fontWeight: '600' },
+  form: { width: '100%' },
   input: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     height: 55,
     borderRadius: 12,
     paddingHorizontal: 15,
     marginBottom: 15,
     fontSize: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
     elevation: 2,
   },
   inputWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
     height: 55,
     borderRadius: 12,
     paddingHorizontal: 15,
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
     elevation: 2,
   },
   permissionRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 15,
-    paddingHorizontal: 5,
   },
-  permissionText: { flex: 1, marginLeft: 10, color: "#606060", fontSize: 15 },
+  permissionText: { flex: 1, marginLeft: 10 },
   button: {
-    backgroundColor: "#48b1a8",
+    backgroundColor: '#48b1a8',
     height: 55,
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 20,
   },
-  buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
-  footerText: { textAlign: "center", color: "#707070", marginTop: 25 },
-  boldText: { color: "#1A1A1A", fontWeight: "600" },
   buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: 'white', fontSize: 18, fontWeight: '600' },
+  footerText: { textAlign: 'center', marginTop: 25 },
+  boldText: { fontWeight: '600' },
 });
