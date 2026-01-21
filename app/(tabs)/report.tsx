@@ -15,6 +15,9 @@ import {
   View,
 } from "react-native";
 import { auth, db } from "../../firebaseConfig"; // Import auth from config
+import * as ImagePicker from "expo-image-picker";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../../firebaseConfig";
 
 const THEME_COLOR = "#2FB9B0";
 
@@ -28,6 +31,8 @@ export default function ReportScreen() {
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Authenticate anonymously on mount
   useEffect(() => {
@@ -49,6 +54,64 @@ export default function ReportScreen() {
     setDate(new Date());
   };
 
+  const pickImageFromGallery = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert("Permission Required", "Gallery access is needed.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const takePhotoFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert("Permission Required", "Camera access is needed.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    try {
+      setUploadingImage(true);
+
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const fileName = `reports/${Date.now()}.jpg`;
+      const imageRef = ref(storage, fileName);
+
+      await uploadBytes(imageRef, blob);
+      const downloadURL = await getDownloadURL(imageRef);
+
+      setImages((prev) => [...prev, downloadURL]);
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      Alert.alert("Error", "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const submitReport = async () => {
     if (!itemName.trim() || !description.trim() || !location.trim()) {
       Alert.alert("Missing Information", "Please fill in all required fields.");
@@ -63,6 +126,7 @@ export default function ReportScreen() {
         description: description.trim(),
         location: location.trim(),
         date,
+        images,
         createdAt: serverTimestamp(),
       });
 
@@ -184,13 +248,13 @@ export default function ReportScreen() {
 
               {showPicker && (
                 <View style={styles.pickerWrapper}>
-                <DateTimePicker
-                  value={date}
-                  mode="date"
-                  display="spinner"
-                  maximumDate={new Date()} // only past dates
-                  onChange={handleDateChange}
-                />
+                  <DateTimePicker
+                    value={date}
+                    mode="date"
+                    display="spinner"
+                    maximumDate={new Date()} // only past dates
+                    onChange={handleDateChange}
+                  />
                 </View>
               )}
             </View>
@@ -199,13 +263,23 @@ export default function ReportScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Add Photos</Text>
               <View style={styles.photoContainer}>
-                <TouchableOpacity style={styles.photoButton}>
+                <TouchableOpacity
+                  style={styles.photoButton}
+                  onPress={takePhotoFromCamera}
+                >
                   <Ionicons name="camera" size={24} color={THEME_COLOR} />
-                  <Text style={styles.photoButtonText}>Camera</Text>
+                  <Text style={styles.photoButtonText}>
+                    {uploadingImage ? "Uploading...." : "Camera"}
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.photoButton}>
+                <TouchableOpacity
+                  style={styles.photoButton}
+                  onPress={pickImageFromGallery}
+                >
                   <Ionicons name="image" size={24} color={THEME_COLOR} />
-                  <Text style={styles.photoButtonText}>Gallery</Text>
+                  <Text style={styles.photoButtonText}>
+                    {uploadingImage ? "Uploading...." : "Gallery"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -318,10 +392,9 @@ const styles = StyleSheet.create({
   submitButtonDisabled: { opacity: 0.7 },
   submitButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   pickerWrapper: {
-  backgroundColor: "#FFFFFF",
-  borderRadius: 12,
-  paddingVertical: 10,
-  marginTop: 10,
-}
-
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
 });
