@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import { signInAnonymously } from "firebase/auth"; // Import Auth
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useEffect, useState } from "react"; // Import useEffect
 import {
   ActivityIndicator,
@@ -14,10 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth, db } from "../../firebaseConfig"; // Import auth from config
-import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../../firebaseConfig";
+import { auth, db, storage } from "../../firebaseConfig"; // Import auth from config
 
 const THEME_COLOR = "#2FB9B0";
 
@@ -100,12 +99,12 @@ export default function ReportScreen() {
       const fileName = `reports/${Date.now()}.jpg`;
       const imageRef = ref(storage, fileName);
 
-      await uploadBytes(imageRef, blob);
+      const res = await uploadBytes(imageRef, blob);
       const downloadURL = await getDownloadURL(imageRef);
 
       setImages((prev) => [...prev, downloadURL]);
-    } catch (error) {
-      console.error("Image upload failed:", error);
+    } catch (error: any) {
+      console.error("Image upload failed:", error.payload || error);
       Alert.alert("Error", "Failed to upload image");
     } finally {
       setUploadingImage(false);

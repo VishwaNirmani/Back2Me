@@ -1,12 +1,12 @@
 import { auth, db, storage } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import { updateProfile } from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
+import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const THEME = '#2FB9B0';
 
@@ -68,22 +68,51 @@ export default function EditProfile() {
   }, []);
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      setError('Permission to access gallery is required.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    // @ts-ignore - result typing varies between platforms
-    const asset = result?.assets?.[0];
-    if (!result.canceled && asset?.uri) {
-      setLocalUri(asset.uri);
-    }
+    Alert.alert(
+      "Profile Picture",
+      "Choose an option",
+      [
+        {
+          text: "Camera",
+          onPress: async () => {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Permission Denied', 'Camera access is required.');
+              return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.7,
+            });
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              setLocalUri(result.assets[0].uri);
+            }
+          }
+        },
+        {
+          text: "Gallery",
+          onPress: async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              Alert.alert('Permission Denied', 'Gallery access is required.');
+              return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.7,
+            });
+            if (!result.canceled && result.assets?.[0]?.uri) {
+              setLocalUri(result.assets[0].uri);
+            }
+          }
+        },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
   };
 
   const handleSave = async () => {
@@ -99,7 +128,6 @@ export default function EditProfile() {
         setError('Full name is required.');
         return;
       }
-      // Validate phone format if provided (10+ digits)
       if (phone.trim() && !/^\d{10,}$/.test(phone.replace(/\D/g, ''))) {
         setError('Phone must contain at least 10 digits.');
         return;
@@ -107,13 +135,28 @@ export default function EditProfile() {
 
       setSaving(true);
       let newPhotoURL = photoURL;
+
+      // Upload new image if selected
       if (localUri) {
-        const blob = await (await fetch(localUri)).blob();
-        const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
-        await uploadBytes(storageRef, blob);
-        newPhotoURL = await getDownloadURL(storageRef);
+        try {
+          const response = await fetch(localUri);
+          const blob = await response.blob();
+
+          // Create a reference to 'users/<uid>/profile.jpg'
+          const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
+
+          // Upload with metadata
+          await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+
+          // Get the download URL
+          newPhotoURL = await getDownloadURL(storageRef);
+        } catch (uploadError: any) {
+          console.error("Upload failed", uploadError);
+          throw new Error(`Image upload failed: ${uploadError.message}`);
+        }
       }
 
+      // Update Firestore
       await setDoc(
         doc(db, 'users', user.uid),
         {
@@ -122,19 +165,21 @@ export default function EditProfile() {
           city: city.trim(),
           address: address.trim(),
           email: user.email,
-          photoURL: newPhotoURL || null,
+          profileImage: newPhotoURL || null, // USING profileImage FIELD AS REQUESTED
+          photoURL: newPhotoURL || null, // Keep photoURL for backward compatibility if needed, else remove
           updatedAt: serverTimestamp(),
         },
         { merge: true }
       );
 
+      // Update Auth Profile
       await updateProfile(user, {
         displayName: fullName.trim(),
         photoURL: newPhotoURL || undefined,
       });
 
       setSuccess('Profile updated');
-      setTimeout(() => router.back(), 600);
+      setTimeout(() => router.back(), 1000); // Wait a bit so user sees success message
     } catch (e: any) {
       console.error('Save profile error', e);
       setError(`Failed to save: ${e?.message || 'Unknown error'}`);
