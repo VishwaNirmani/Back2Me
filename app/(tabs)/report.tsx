@@ -27,6 +27,7 @@ export default function ReportScreen() {
   const [itemName, setItemName] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [category, setCategory] = useState("");
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,7 @@ export default function ReportScreen() {
     setItemName("");
     setDescription("");
     setLocation("");
+    setCategory("");
     setDate(new Date());
   };
 
@@ -124,6 +126,7 @@ export default function ReportScreen() {
         itemName: itemName.trim(),
         description: description.trim(),
         location: location.trim(),
+        category: category.trim() || null,
         date,
         images,
         createdAt: serverTimestamp(),
@@ -230,6 +233,18 @@ export default function ReportScreen() {
                 placeholder="e.g. Central Station, Platform 3"
                 value={location}
                 onChangeText={setLocation}
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            {/* Category */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Category</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Wallets, Keys, Electronics"
+                value={category}
+                onChangeText={setCategory}
                 placeholderTextColor="#9CA3AF"
               />
             </View>

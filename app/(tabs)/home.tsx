@@ -1,6 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // Import useRouter
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router"; // Import useRouter
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
   FlatList, // Import FlatList
   Image,
@@ -10,83 +11,114 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
+import { db } from "../../firebaseConfig";
 
-const THEME = '#2FB9B0';
+const THEME = "#2FB9B0";
 
-const CATEGORIES = ['All', 'Electronics', 'Wallets', 'Documents', 'Keys'];
+const CATEGORIES = ["All", "Electronics", "Wallets", "Documents", "Keys"];
 
-const ITEMS = [
-  {
-    id: '1',
-    title: 'Brown Leather Wallet',
-    status: 'Lost',
-    location: 'Colombo',
-    time: '2h ago',
-    image:
-      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=300',
-    description: 'A brown leather wallet containing ID and credit cards.',
-    owner: 'Alex Smith',
-    category: 'Wallets',
-  },
-  {
-    id: '2',
-    title: 'Found Keys',
-    status: 'Found',
-    location: 'Kandy',
-    time: '1h ago',
-    image:
-      'https://cdn.shopify.com/s/files/1/2245/3557/files/CSE-AS-ExtraKeys.png?v=1713479233',
-    description: 'Found a set of keys with a blue keychain near the park.',
-    owner: 'Sarah Jones',
-    category: 'Keys',
-  },
-  {
-    id: '3',
-    title: 'Lost Backpack',
-    status: 'Lost',
-    location: 'Peradeniya',
-    time: '1d ago',
-    image:
-      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300',
-    description: 'Black hiking backpack lost near the university entrance.',
-    owner: 'Mike Brown',
-    category: 'Electronics', // Assuming category for demo
-  },
-];
+// Placeholder image shown when report has no image
+const PLACEHOLDER_IMAGE = "https://via.placeholder.com/300?text=No+Image";
 
 export default function Home() {
   const router = useRouter(); // Initialize router
-  const [tab, setTab] = useState<'Lost' | 'Found'>('Lost');
-  const [category, setCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState(''); // Add search state
+  const [tab, setTab] = useState<"Lost" | "Found">("Lost");
+  const [category, setCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState(""); // Add search state
+  const [items, setItems] = useState<Array<any>>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredItems = ITEMS.filter((i) => {
+  // Helper: human readable time ago
+  const timeAgo = (date: Date) => {
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  // Subscribe to `reports` collection in Firestore
+  useEffect(() => {
+    setLoading(true);
+    const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const mapped = snapshot.docs.map((doc) => {
+          const data: any = doc.data();
+          let createdAt: Date = new Date();
+          if (data.createdAt && typeof data.createdAt.toDate === "function") {
+            createdAt = data.createdAt.toDate();
+          } else if (data.date && typeof data.date.toDate === "function") {
+            createdAt = data.date.toDate();
+          } else if (data.date) {
+            createdAt = new Date(data.date);
+          }
+
+          return {
+            id: doc.id,
+            title: data.itemName || "Untitled",
+            status: data.type || "Lost",
+            location: data.location || "",
+            time: timeAgo(createdAt),
+            image: (data.images && data.images[0]) || PLACEHOLDER_IMAGE,
+            description: data.description || "",
+            owner: data.owner || "",
+            category: data.category || "",
+          };
+        });
+
+        setItems(mapped);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Failed to subscribe to reports:", err);
+        setLoading(false);
+      },
+    );
+
+    return () => unsub();
+  }, []);
+
+  const filteredItems = items.filter((i) => {
     const matchesTab = i.status === tab;
-    const matchesCategory = category === 'All' || i.category === category;
-    const matchesSearch = i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      category === "All" || !i.category || i.category === category;
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      // match item name / title
+      (i.title && i.title.toLowerCase().includes(q)) ||
+      // match location
+      (i.location && i.location.toLowerCase().includes(q)) ||
+      // match description
+      (i.description && i.description.toLowerCase().includes(q)) ||
+      // match owner/name
+      (i.owner && i.owner.toLowerCase().includes(q));
 
     return matchesTab && matchesCategory && matchesSearch;
   });
 
   // Render Item Component for FlatList
-  const renderItem = ({ item }: { item: typeof ITEMS[0] }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={{
-        backgroundColor: '#fff',
+        backgroundColor: "#fff",
         marginHorizontal: 16,
         marginBottom: 12,
         borderRadius: 14,
         padding: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
       }}
       onPress={() => {
         // Navigate to item details, passing params
         router.push({
-          pathname: '/item/[id]',
+          pathname: "/item/[id]",
           params: {
             id: item.id,
             title: item.title,
@@ -96,18 +128,18 @@ export default function Home() {
             image: item.image,
             description: item.description,
             owner: item.owner,
-            category: item.category
-          }
+            category: item.category,
+          },
         });
       }}
     >
       <Image
-        source={{ uri: item.image }}
+        source={{ uri: item.image || PLACEHOLDER_IMAGE }}
         style={{
           width: 70,
           height: 70,
           borderRadius: 10,
-          backgroundColor: '#E5E7EB',
+          backgroundColor: "#E5E7EB",
         }}
       />
 
@@ -115,8 +147,8 @@ export default function Home() {
         <Text
           style={{
             fontSize: 15,
-            fontWeight: '600',
-            color: '#111827',
+            fontWeight: "600",
+            color: "#111827",
           }}
         >
           {item.title}
@@ -125,7 +157,7 @@ export default function Home() {
         <Text
           style={{
             fontSize: 12,
-            color: '#6B7280',
+            color: "#6B7280",
             marginTop: 4,
           }}
         >
@@ -135,8 +167,7 @@ export default function Home() {
 
       <View
         style={{
-          backgroundColor:
-            item.status === 'Lost' ? '#FEE2E2' : '#DCFCE7',
+          backgroundColor: item.status === "Lost" ? "#FEE2E2" : "#DCFCE7",
           paddingHorizontal: 10,
           paddingVertical: 4,
           borderRadius: 8,
@@ -145,9 +176,8 @@ export default function Home() {
         <Text
           style={{
             fontSize: 11,
-            fontWeight: '600',
-            color:
-              item.status === 'Lost' ? '#DC2626' : '#16A34A',
+            fontWeight: "600",
+            color: item.status === "Lost" ? "#DC2626" : "#16A34A",
           }}
         >
           {item.status}
@@ -157,7 +187,7 @@ export default function Home() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F3F4F6" }}>
       {/* 
         Using FlatList for the feed part, but since we have a complex header (Categories, Tabs, Search),
         we should use ListHeaderComponent to render them so everything scrolls together.
@@ -178,9 +208,9 @@ export default function Home() {
             >
               <Text
                 style={{
-                  color: '#fff',
+                  color: "#fff",
                   fontSize: 22,
-                  fontWeight: '700',
+                  fontWeight: "700",
                 }}
               >
                 Back2Me
@@ -188,7 +218,7 @@ export default function Home() {
 
               <Text
                 style={{
-                  color: '#ECFEFF',
+                  color: "#ECFEFF",
                   fontSize: 13,
                   marginTop: 2,
                 }}
@@ -199,9 +229,9 @@ export default function Home() {
               {/* SEARCH */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#fff',
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#fff",
                   borderRadius: 10,
                   marginTop: 14,
                   paddingHorizontal: 12,
@@ -240,15 +270,14 @@ export default function Home() {
                     paddingHorizontal: 16,
                     paddingVertical: 8,
                     borderRadius: 20,
-                    backgroundColor:
-                      category === item ? THEME : '#E5E7EB',
+                    backgroundColor: category === item ? THEME : "#E5E7EB",
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 13,
-                      fontWeight: '600',
-                      color: category === item ? '#fff' : '#6B7280',
+                      fontWeight: "600",
+                      color: category === item ? "#fff" : "#6B7280",
                     }}
                   >
                     {item}
@@ -260,15 +289,15 @@ export default function Home() {
             {/* LOST / FOUND TABS */}
             <View
               style={{
-                flexDirection: 'row',
+                flexDirection: "row",
                 marginHorizontal: 16,
-                backgroundColor: '#E5E7EB',
+                backgroundColor: "#E5E7EB",
                 borderRadius: 10,
                 padding: 4,
                 marginBottom: 10,
               }}
             >
-              {['Lost', 'Found'].map((item) => (
+              {["Lost", "Found"].map((item) => (
                 <TouchableOpacity
                   key={item}
                   onPress={() => setTab(item as any)}
@@ -276,14 +305,14 @@ export default function Home() {
                     flex: 1,
                     paddingVertical: 10,
                     borderRadius: 8,
-                    backgroundColor: tab === item ? '#fff' : 'transparent',
-                    alignItems: 'center',
+                    backgroundColor: tab === item ? "#fff" : "transparent",
+                    alignItems: "center",
                   }}
                 >
                   <Text
                     style={{
-                      fontWeight: '600',
-                      color: tab === item ? THEME : '#6B7280',
+                      fontWeight: "600",
+                      color: tab === item ? THEME : "#6B7280",
                     }}
                   >
                     {item}
