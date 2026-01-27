@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   Text,
@@ -50,12 +51,30 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      router.replace('/(auth)/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          onPress: async () => {
+            try {
+              await auth.signOut();
+              router.replace('/(auth)/login');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   if (loading) {
