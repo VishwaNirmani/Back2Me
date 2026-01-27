@@ -6,7 +6,21 @@ import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
 const THEME = '#2FB9B0';
 
@@ -206,61 +220,113 @@ export default function EditProfile() {
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Edit Profile</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16 }}>
-          {/* Avatar */}
-          <View style={{ alignItems: 'center', marginBottom: 12 }}>
-            <View style={{ width: 100, height: 100, borderRadius: 50, overflow: 'hidden', backgroundColor: '#E0F2FE', alignItems: 'center', justifyContent: 'center' }}>
-              {localUri || photoURL ? (
-                <Image source={{ uri: localUri || (photoURL as string) }} style={{ width: '100%', height: '100%' }} />
-              ) : (
-                <Ionicons name="person" size={44} color={THEME} />
-              )}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16 }}>
+              {/* Avatar */}
+              <View style={{ alignItems: 'center', marginBottom: 12 }}>
+                <View style={{ width: 100, height: 100, borderRadius: 50, overflow: 'hidden', backgroundColor: '#E0F2FE', alignItems: 'center', justifyContent: 'center' }}>
+                  {localUri || photoURL ? (
+                    <Image source={{ uri: localUri || (photoURL as string) }} style={{ width: '100%', height: '100%' }} />
+                  ) : (
+                    <Ionicons name="person" size={44} color={THEME} />
+                  )}
+                </View>
+                <TouchableOpacity onPress={pickImage} style={{ marginTop: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#F3F4F6' }}>
+                  <Text style={{ color: '#374151', fontWeight: '600' }}>Change Profile Picture</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Full Name */}
+              <Text style={{ fontSize: 12, color: '#6B7280' }}>Full Name</Text>
+              <TextInput
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Enter your full name"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+              />
+
+              {/* Email (read-only) */}
+              <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>Email Address</Text>
+              <TextInput
+                value={email}
+                editable={false}
+                selectTextOnFocus={false}
+                style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', color: '#6B7280', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+              />
+
+              {/* Phone */}
+              <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>Phone Number</Text>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                placeholder="Enter your phone number"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+              />
+
+              {/* City */}
+              <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>City</Text>
+              <TextInput
+                value={city}
+                onChangeText={setCity}
+                placeholder="Enter your city"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+              />
+
+              {/* Address */}
+              <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>Address</Text>
+              <TextInput
+                value={address}
+                onChangeText={setAddress}
+                placeholder="Enter your address"
+                multiline
+                numberOfLines={4}
+                returnKeyType="done"
+                blurOnSubmit={true}
+                style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, textAlignVertical: 'top' }}
+              />
+
+              {error ? (
+                <View style={{ marginTop: 12, backgroundColor: '#FEE2E2', borderRadius: 10, padding: 10 }}>
+                  <Text style={{ color: '#DC2626' }}>{error}</Text>
+                </View>
+              ) : null}
+
+              {success ? (
+                <View style={{ marginTop: 12, backgroundColor: '#D1FAE5', borderRadius: 10, padding: 10 }}>
+                  <Text style={{ color: '#065F46' }}>{success}</Text>
+                </View>
+              ) : null}
+
+              {/* Save */}
+              <TouchableOpacity
+                disabled={saving}
+                onPress={handleSave}
+                style={{ marginTop: 16, paddingVertical: 12, borderRadius: 10, backgroundColor: THEME, alignItems: 'center', opacity: saving ? 0.8 : 1 }}
+              >
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Save Changes</Text>}
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={pickImage} style={{ marginTop: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#F3F4F6' }}>
-              <Text style={{ color: '#374151', fontWeight: '600' }}>Change Profile Picture</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Full Name */}
-          <Text style={{ fontSize: 12, color: '#6B7280' }}>Full Name</Text>
-          <TextInput value={fullName} onChangeText={setFullName} placeholder="Enter your full name" style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }} />
-
-          {/* Email (read-only) */}
-          <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>Email Address</Text>
-          <TextInput value={email} editable={false} selectTextOnFocus={false} style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', color: '#6B7280', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }} />
-
-          {/* Phone */}
-          <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>Phone Number</Text>
-          <TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="Enter your phone number" style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }} />
-
-          {/* City */}
-          <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>City</Text>
-          <TextInput value={city} onChangeText={setCity} placeholder="Enter your city" style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }} />
-
-          {/* Address */}
-          <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 14 }}>Address</Text>
-          <TextInput value={address} onChangeText={setAddress} placeholder="Enter your address" multiline style={{ marginTop: 6, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 80, textAlignVertical: 'top' }} />
-
-          {error ? (
-            <View style={{ marginTop: 12, backgroundColor: '#FEE2E2', borderRadius: 10, padding: 10 }}>
-              <Text style={{ color: '#DC2626' }}>{error}</Text>
-            </View>
-          ) : null}
-
-          {success ? (
-            <View style={{ marginTop: 12, backgroundColor: '#D1FAE5', borderRadius: 10, padding: 10 }}>
-              <Text style={{ color: '#065F46' }}>{success}</Text>
-            </View>
-          ) : null}
-
-          {/* Save */}
-          <TouchableOpacity disabled={saving} onPress={handleSave} style={{ marginTop: 16, paddingVertical: 12, borderRadius: 10, backgroundColor: THEME, alignItems: 'center', opacity: saving ? 0.8 : 1 }}>
-            {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Save Changes</Text>}
-          </TouchableOpacity>
-        </View>
-        <View style={{ height: 30 }} />
-      </ScrollView>
+            <View style={{ height: 30 }} />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
