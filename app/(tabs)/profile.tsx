@@ -1,7 +1,7 @@
 import { auth, db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -127,6 +127,34 @@ export default function Profile() {
             }
           },
           style: 'destructive',
+        },
+      ]
+    );
+  };
+
+  const handleDeleteReport = async (reportId: string, reportType: 'Lost' | 'Found') => {
+    Alert.alert(
+      'Delete Report',
+      'Are you sure you want to delete this item?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, 'reports', reportId));
+
+              if (reportType === 'Lost') {
+                setLostItems((prev) => prev.filter((item) => item.id !== reportId));
+              } else {
+                setFoundItems((prev) => prev.filter((item) => item.id !== reportId));
+              }
+            } catch (error) {
+              console.error('Error deleting report:', error);
+              Alert.alert('Error', 'Failed to delete the report. Please try again.');
+            }
+          },
         },
       ]
     );
@@ -335,7 +363,11 @@ export default function Profile() {
             ) : (
               <View style={{ gap: 12 }}>
                 {lostItems.map((item) => (
-                  <ItemCard key={item.id} item={item} />
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onDelete={() => handleDeleteReport(item.id, 'Lost')}
+                  />
                 ))}
               </View>
             )
@@ -347,7 +379,11 @@ export default function Profile() {
             ) : (
               <View style={{ gap: 12 }}>
                 {foundItems.map((item) => (
-                  <ItemCard key={item.id} item={item} />
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onDelete={() => handleDeleteReport(item.id, 'Found')}
+                  />
                 ))}
               </View>
             )
@@ -418,7 +454,7 @@ const SettingItem = ({
   </TouchableOpacity>
 );
 
-const ItemCard = ({ item }: { item: any }) => {
+const ItemCard = ({ item, onDelete }: { item: any; onDelete: () => void }) => {
   const itemDate = item.date?.toDate ? item.date.toDate() : new Date(item.date);
   
   return (
@@ -457,12 +493,28 @@ const ItemCard = ({ item }: { item: any }) => {
             </View>
           )}
         </View>
-        {item.images && item.images.length > 0 && (
-          <Image
-            source={{ uri: item.images[0] }}
-            style={{ width: 70, height: 70, borderRadius: 8, marginLeft: 10 }}
-          />
-        )}
+        <View style={{ alignItems: 'flex-end', marginLeft: 10 }}>
+          <TouchableOpacity
+            onPress={onDelete}
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: '#FEE2E2',
+              marginBottom: 8,
+            }}
+          >
+            <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '600' }}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+          {item.images && item.images.length > 0 && (
+            <Image
+              source={{ uri: item.images[0] }}
+              style={{ width: 70, height: 70, borderRadius: 8 }}
+            />
+          )}
+        </View>
       </View>
     </View>
   );
