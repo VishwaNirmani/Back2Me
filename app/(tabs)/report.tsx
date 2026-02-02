@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
-import { signInAnonymously } from "firebase/auth"; // Import Auth
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import React, { useEffect, useState } from "react"; // Import useEffect
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -33,13 +32,6 @@ export default function ReportScreen() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  // Authenticate anonymously on mount
-  useEffect(() => {
-    signInAnonymously(auth).catch((error) => {
-      console.error("Error signing in anonymously:", error);
-    });
-  }, []);
 
   const handleDateChange = (_event: any, selectedDate?: Date) => {
     if (selectedDate) setDate(selectedDate); // update date
@@ -121,6 +113,13 @@ export default function ReportScreen() {
 
     setLoading(true);
     try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        Alert.alert("Error", "You must be logged in to submit a report.");
+        setLoading(false);
+        return;
+      }
+
       await addDoc(collection(db, "reports"), {
         type,
         itemName: itemName.trim(),
@@ -129,6 +128,7 @@ export default function ReportScreen() {
         category: category.trim() || null,
         date,
         images,
+        userId: currentUser.uid,
         createdAt: serverTimestamp(),
       });
 
