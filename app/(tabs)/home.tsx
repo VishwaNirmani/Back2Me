@@ -67,7 +67,8 @@ export default function Home() {
             time: timeAgo(createdAt),
             image: (data.images && data.images[0]) || PLACEHOLDER_IMAGE,
             description: data.description || "",
-            owner: data.owner || "",
+            owner: data.ownerName || data.owner || "Anonymous",
+            ownerId: data.userId || "",
             category: data.category || "",
           };
         });
@@ -128,6 +129,7 @@ export default function Home() {
             image: item.image,
             description: item.description,
             owner: item.owner,
+            ownerId: item.ownerId,
             category: item.category,
           },
         });

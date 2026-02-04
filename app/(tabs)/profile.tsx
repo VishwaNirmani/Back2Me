@@ -1,7 +1,7 @@
 import { auth, db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -77,6 +77,28 @@ export default function Profile() {
         id: doc.id, 
         ...doc.data() 
       }));
+
+      // Backfill missing ownerName on user's reports
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      const userInfo = userDoc.exists() ? userDoc.data() : null;
+      const ownerName =
+        userInfo?.fullName ||
+        currentUser.displayName ||
+        currentUser.email ||
+        'Anonymous';
+
+      const missingOwner = reportsSnapshot.docs.filter((d) => {
+        const data: any = d.data();
+        return !data.ownerName;
+      });
+
+      if (missingOwner.length > 0 && ownerName !== 'Anonymous') {
+        const batch = writeBatch(db);
+        missingOwner.forEach((d) => {
+          batch.update(d.ref, { ownerName });
+        });
+        await batch.commit();
+      }
 
       // Filter and sort on client side
       const lost = allReports
@@ -264,7 +286,6 @@ export default function Profile() {
             {[
               { label: 'Lost', value: lostItems.length },
               { label: 'Found', value: foundItems.length },
-              { label: 'Matches', value: 0 },
             ].map((item) => (
               <View
                 key={item.label}
@@ -366,6 +387,7 @@ export default function Profile() {
                   <ItemCard
                     key={item.id}
                     item={item}
+                    onEdit={() => router.push({ pathname: '/report/edit/[id]', params: { id: item.id } })}
                     onDelete={() => handleDeleteReport(item.id, 'Lost')}
                   />
                 ))}
@@ -382,6 +404,7 @@ export default function Profile() {
                   <ItemCard
                     key={item.id}
                     item={item}
+                    onEdit={() => router.push({ pathname: '/report/edit/[id]', params: { id: item.id } })}
                     onDelete={() => handleDeleteReport(item.id, 'Found')}
                   />
                 ))}
@@ -454,7 +477,7 @@ const SettingItem = ({
   </TouchableOpacity>
 );
 
-const ItemCard = ({ item, onDelete }: { item: any; onDelete: () => void }) => {
+const ItemCard = ({ item, onEdit, onDelete }: { item: any; onEdit: () => void; onDelete: () => void }) => {
   const itemDate = item.date?.toDate ? item.date.toDate() : new Date(item.date);
   
   return (
@@ -494,6 +517,20 @@ const ItemCard = ({ item, onDelete }: { item: any; onDelete: () => void }) => {
           )}
         </View>
         <View style={{ alignItems: 'flex-end', marginLeft: 10 }}>
+          <TouchableOpacity
+            onPress={onEdit}
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: '#E0F2FE',
+              marginBottom: 8,
+            }}
+          >
+            <Text style={{ color: '#0369A1', fontSize: 12, fontWeight: '600' }}>
+              Edit
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={onDelete}
             style={{

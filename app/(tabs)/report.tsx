@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useState } from "react";
 import {
@@ -120,6 +120,14 @@ export default function ReportScreen() {
         return;
       }
 
+      const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+      const userData = userSnap.exists() ? userSnap.data() : null;
+      const ownerName =
+        userData?.fullName ||
+        currentUser.displayName ||
+        currentUser.email ||
+        "Anonymous";
+
       await addDoc(collection(db, "reports"), {
         type,
         itemName: itemName.trim(),
@@ -129,6 +137,7 @@ export default function ReportScreen() {
         date,
         images,
         userId: currentUser.uid,
+        ownerName,
         createdAt: serverTimestamp(),
       });
 
