@@ -155,7 +155,8 @@ export default function Notifications() {
                   })(),
                   image: (data.images && data.images[0]) || PLACEHOLDER_IMAGE,
                   description: data.description || "",
-                  owner: data.owner || "",
+                  owner: data.ownerName || data.owner || "Anonymous",
+                  ownerId: data.userId || "",
                   category: data.category || "",
                   distanceKm: Math.round(d * 10) / 10,
                 });
@@ -263,6 +264,7 @@ export default function Notifications() {
                       image: item.image,
                       description: item.description,
                       owner: item.owner,
+                      ownerId: item.ownerId,
                       category: item.category,
                     },
                   })

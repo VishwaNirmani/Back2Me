@@ -57,6 +57,8 @@ export default function ItemDetails() {
             createdAt = new Date(data.date);
           }
 
+          const ownerName = data.ownerName || data.owner || "Anonymous";
+
           setFetched({
             id: d.id,
             title: data.itemName || params.title || "Unknown Item",
@@ -72,7 +74,8 @@ export default function ItemDetails() {
               (data.images && data.images[0]) ||
               (params.image as string) ||
               "https://via.placeholder.com/300",
-            owner: data.owner || params.owner || "Anonymous",
+            owner: ownerName || params.owner || "Anonymous",
+            ownerId: data.userId || params.ownerId || "",
           });
         }
       } catch (err) {
@@ -95,6 +98,7 @@ export default function ItemDetails() {
       "No description provided for this item.",
     image: (params.image as string) || "https://via.placeholder.com/300",
     owner: (params.owner as string) || "Anonymous",
+    ownerId: (params.ownerId as string) || "",
   };
 
   const reportReasons = [
@@ -220,7 +224,16 @@ export default function ItemDetails() {
           </View>
 
           {/* ACTION BUTTONS */}
-          <TouchableOpacity style={styles.primaryButton}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => {
+              if (!item.ownerId) return;
+              router.push({
+                pathname: "/profile/[id]",
+                params: { id: item.ownerId },
+              });
+            }}
+          >
             <Ionicons name="person-outline" size={20} color="#fff" />
             <Text style={styles.primaryButtonText}>View Profile</Text>
           </TouchableOpacity>
