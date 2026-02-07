@@ -66,7 +66,7 @@ export default function LoginScreen() {
       const result = await signInWithEmailAndPassword(
         auth,
         email.trim(),
-        password
+        password,
       );
 
       if (result.user) {
@@ -127,6 +127,7 @@ export default function LoginScreen() {
                   source={require("../../assets/images/logo.jpeg")}
                   style={styles.logo}
                 />
+                <Text style={styles.logoLabel}>Back2Me</Text>
               </View>
 
               {/* Form */}
@@ -233,6 +234,12 @@ const styles = StyleSheet.create({
     width: 180,
     height: 100,
     borderRadius: 10,
+  },
+  logoLabel: {
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1A1A1A",
   },
   form: {
     width: "85%",

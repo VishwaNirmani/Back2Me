@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router"; // Import useRouter
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList, // Import FlatList
   Image,
@@ -16,7 +16,7 @@ import { db } from "../../firebaseConfig";
 
 const THEME = "#2FB9B0";
 
-const CATEGORIES = ["All", "Electronics", "Wallets", "Documents", "Keys"];
+// categories will be derived from reports at runtime
 
 // Placeholder image shown when report has no image
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/300?text=No+Image";
@@ -87,8 +87,21 @@ export default function Home() {
 
   const filteredItems = items.filter((i) => {
     const matchesTab = i.status === tab;
-    const matchesCategory =
-      category === "All" || !i.category || i.category === category;
+    const selected = (category || "All").toString().trim();
+    const lowerSelected = selected.toLowerCase();
+
+    let matchesCategory = true;
+    if (selected !== "All") {
+      const catField = (i.category || "").toString().toLowerCase();
+      const title = (i.title || "").toString().toLowerCase();
+      const desc = (i.description || "").toString().toLowerCase();
+
+      // include only when the selected category keyword appears in category/title/description
+      matchesCategory =
+        (catField && catField.includes(lowerSelected)) ||
+        (title && title.includes(lowerSelected)) ||
+        (desc && desc.includes(lowerSelected));
+    }
     const q = searchQuery.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -103,6 +116,17 @@ export default function Home() {
 
     return matchesTab && matchesCategory && matchesSearch;
   });
+
+  // Derive categories from loaded reports, keep 'All' first
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of items) {
+      if (it.category && it.category.toString().trim()) {
+        set.add(it.category.toString());
+      }
+    }
+    return ["All", ...Array.from(set)];
+  }, [items]);
 
   // Render Item Component for FlatList
   const renderItem = ({ item }: { item: any }) => (
@@ -264,7 +288,7 @@ export default function Home() {
                 gap: 10,
               }}
             >
-              {CATEGORIES.map((item) => (
+              {categories.map((item) => (
                 <TouchableOpacity
                   key={item}
                   onPress={() => setCategory(item)}

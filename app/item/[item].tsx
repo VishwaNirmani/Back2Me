@@ -25,7 +25,8 @@ export default function ItemDetails() {
     date: "1 day ago",
     description:
       "Found a green hiking backpack near Kandy city. It has a front pocket and side bottle holder. No ID inside.",
-    image: "https://www.driftersshop.co.za/cdn/shop/files/FirstAscentMercury65LLightweightTrekkingPack_2000x.webp?v=1726487430https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVrSwVInV0UzlVTIoziEUQjASm852v67PqiA&s",
+    image:
+      "https://www.driftersshop.co.za/cdn/shop/files/FirstAscentMercury65LLightweightTrekkingPack_2000x.webp?v=1726487430https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVrSwVInV0UzlVTIoziEUQjASm852v67PqiA&s",
     owner: "John Doe",
   };
 
@@ -77,13 +78,30 @@ export default function ItemDetails() {
 
           {/* STATUS BADGE */}
           <View style={styles.statusContainer}>
-            <View style={[styles.statusBadgeLarge, { backgroundColor: item.status === "Lost" ? "#FEE2E2" : "#DCFCE7" }]}>
+            <View
+              style={[
+                styles.statusBadgeLarge,
+                {
+                  backgroundColor:
+                    item.status === "Lost" ? "#FEE2E2" : "#DCFCE7",
+                },
+              ]}
+            >
               <Ionicons
-                name={item.status === "Lost" ? "sad-outline" : "checkmark-circle-outline"}
+                name={
+                  item.status === "Lost"
+                    ? "sad-outline"
+                    : "checkmark-circle-outline"
+                }
                 size={20}
                 color={item.status === "Lost" ? "#DC2626" : "#16A34A"}
               />
-              <Text style={[styles.statusTextLarge, { color: item.status === "Lost" ? "#DC2626" : "#16A34A" }]}>
+              <Text
+                style={[
+                  styles.statusTextLarge,
+                  { color: item.status === "Lost" ? "#DC2626" : "#16A34A" },
+                ]}
+              >
                 {item.status}
               </Text>
             </View>
@@ -121,9 +139,7 @@ export default function ItemDetails() {
           <View style={styles.ownerCard}>
             <View style={styles.ownerLeft}>
               <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>
-                  {item.owner.charAt(0)}
-                </Text>
+                <Text style={styles.avatarText}>{item.owner.charAt(0)}</Text>
               </View>
               <View>
                 <Text style={styles.ownerName}>{item.owner}</Text>
@@ -138,9 +154,7 @@ export default function ItemDetails() {
           {/* ACTION BUTTONS */}
           <TouchableOpacity style={styles.primaryButton}>
             <Ionicons name="person-outline" size={20} color="#fff" />
-            <Text style={styles.primaryButtonText}>
-              View Profile
-            </Text>
+            <Text style={styles.primaryButtonText}>View Profile</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -188,9 +202,7 @@ export default function ItemDetails() {
                   <Ionicons
                     name={reason.icon}
                     size={22}
-                    color={
-                      selectedReason === reason.text ? THEME : "#6B7280"
-                    }
+                    color={selectedReason === reason.text ? THEME : "#6B7280"}
                   />
                   <Text
                     style={[
@@ -202,11 +214,7 @@ export default function ItemDetails() {
                     {reason.text}
                   </Text>
                   {selectedReason === reason.text && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={22}
-                      color={THEME}
-                    />
+                    <Ionicons name="checkmark-circle" size={22} color={THEME} />
                   )}
                 </TouchableOpacity>
               ))}

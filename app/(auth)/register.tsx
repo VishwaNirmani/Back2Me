@@ -1,7 +1,7 @@
-import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
-import { MapPin, ShieldCheck } from 'lucide-react-native';
-import React, { useState } from 'react';
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import { MapPin, ShieldCheck } from "lucide-react-native";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,21 +16,21 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { auth, db } from '@/firebaseConfig';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db } from "@/firebaseConfig";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 export default function RegisterScreen() {
   const router = useRouter();
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [city, setCity] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [city, setCity] = useState("");
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [locationCoords, setLocationCoords] = useState<{
     latitude: number;
@@ -42,8 +42,8 @@ export default function RegisterScreen() {
   const requestLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Location access is required.');
+    if (status !== "granted") {
+      Alert.alert("Permission Denied", "Location access is required.");
       setLocationEnabled(false);
       return;
     }
@@ -58,12 +58,12 @@ export default function RegisterScreen() {
   // ================= REGISTER =================
   const handleRegister = async () => {
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
-      Alert.alert('Error', 'All fields are required');
+      Alert.alert("Error", "All fields are required");
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email');
+      Alert.alert("Error", "Please enter a valid email");
       return;
     }
 
@@ -73,14 +73,14 @@ export default function RegisterScreen() {
 
     if (!strongPasswordRegex.test(password)) {
       Alert.alert(
-        'Weak Password',
-        'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+        "Weak Password",
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
       );
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
 
@@ -88,7 +88,11 @@ export default function RegisterScreen() {
       setLoading(true);
 
       // Create Auth account
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       const user = userCredential.user;
 
       // Update profile
@@ -97,7 +101,7 @@ export default function RegisterScreen() {
       });
 
       // Save user profile to Firestore
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         fullName: fullName.trim(),
         email: email.trim(),
@@ -106,37 +110,36 @@ export default function RegisterScreen() {
         location: locationCoords,
         createdAt: serverTimestamp(),
         profileImage: null,
-        bio: '',
+        bio: "",
       });
 
       await auth.signOut();
       setLoading(false);
-      Alert.alert('Success', 'Account created successfully!');
-      router.replace('/login');
+      Alert.alert("Success", "Account created successfully!");
+      router.replace("/login");
     } catch (error: any) {
       setLoading(false);
 
-      let errorMessage = 'Something went wrong';
+      let errorMessage = "Something went wrong";
 
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Email already registered';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak';
+      if (error.code === "auth/email-already-in-use") {
+        errorMessage = "Email already registered";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password is too weak";
       }
 
-      Alert.alert('Registration Failed', errorMessage);
+      Alert.alert("Registration Failed", errorMessage);
     }
   };
-
 
   return (
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <ScrollView
             contentContainerStyle={{ flexGrow: 1, padding: 30 }}
@@ -152,6 +155,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Full Name"
+                placeholderTextColor="#9CA3AF"
                 value={fullName}
                 onChangeText={setFullName}
                 editable={!loading}
@@ -160,6 +164,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Email"
+                placeholderTextColor="#9CA3AF"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -170,6 +175,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Password"
+                placeholderTextColor="#9CA3AF"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -179,6 +185,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
+                placeholderTextColor="#9CA3AF"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
@@ -189,6 +196,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={{ flex: 1, fontSize: 16 }}
                   placeholder="City"
+                  placeholderTextColor="#9CA3AF"
                   value={city}
                   onChangeText={setCity}
                 />
@@ -222,7 +230,8 @@ export default function RegisterScreen() {
 
               <TouchableOpacity onPress={() => router.back()}>
                 <Text style={styles.footerText}>
-                  Already have an account? <Text style={styles.boldText}>Login</Text>
+                  Already have an account?{" "}
+                  <Text style={styles.boldText}>Login</Text>
                 </Text>
               </TouchableOpacity>
             </View>
@@ -234,19 +243,19 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FB' },
+  container: { flex: 1, backgroundColor: "#F8F9FB" },
   header: {
     height: 70,
-    width: '100%',
-    backgroundColor: '#48b1a8',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    backgroundColor: "#48b1a8",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
-  headerTitle: { color: 'white', fontSize: 28, fontWeight: '600' },
-  form: { width: '100%' },
+  headerTitle: { color: "white", fontSize: 28, fontWeight: "600" },
+  form: { width: "100%" },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     height: 55,
     borderRadius: 12,
     paddingHorizontal: 15,
@@ -255,9 +264,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   inputWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
     height: 55,
     borderRadius: 12,
     paddingHorizontal: 15,
@@ -265,21 +274,21 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   permissionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 15,
   },
   permissionText: { flex: 1, marginLeft: 10 },
   button: {
-    backgroundColor: '#48b1a8',
+    backgroundColor: "#48b1a8",
     height: 55,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 20,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: 'white', fontSize: 18, fontWeight: '600' },
-  footerText: { textAlign: 'center', marginTop: 25 },
-  boldText: { fontWeight: '600' },
+  buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
+  footerText: { textAlign: "center", marginTop: 25 },
+  boldText: { fontWeight: "600" },
 });
