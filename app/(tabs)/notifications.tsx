@@ -17,7 +17,6 @@ import { db } from "../../firebaseConfig";
 
 const THEME = "#2FB9B0";
 
-// Nearby radius (km)
 const NEARBY_RADIUS_KM = 10;
 
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/400?text=No+Image";
@@ -29,7 +28,6 @@ export default function Notifications() {
   const [locationDenied, setLocationDenied] = useState(false);
   const prevIdsRef = useRef<Set<string>>(new Set());
 
-  // Haversine formula to compute distance in km
   const distanceKm = (
     lat1: number,
     lon1: number,
@@ -37,7 +35,7 @@ export default function Notifications() {
     lon2: number,
   ) => {
     const toRad = (v: number) => (v * Math.PI) / 180;
-    const R = 6371; // Earth km
+    const R = 6371;
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
     const a =
@@ -78,7 +76,6 @@ export default function Notifications() {
             for (const doc of snapshot.docs) {
               const data: any = doc.data();
 
-              // Try to extract coordinates from common fields
               let coords: { lat: number; lng: number } | null = null;
               if (
                 data.coords &&
@@ -103,7 +100,6 @@ export default function Notifications() {
                 };
               }
 
-              // If no numeric coords available, try geocoding the textual `location` field
               if (!coords && data.location) {
                 try {
                   const geocoded = await Location.geocodeAsync(data.location);
@@ -113,12 +109,10 @@ export default function Notifications() {
                       lng: geocoded[0].longitude,
                     };
                   }
-                } catch (e) {
-                  // geocoding failed; ignore and skip
-                }
+                } catch (e) {}
               }
 
-              if (!coords || !userLoc) continue; // skip if no coords
+              if (!coords || !userLoc) continue;
 
               const d = distanceKm(
                 userLoc.lat,
@@ -163,7 +157,6 @@ export default function Notifications() {
               }
             }
 
-            // detect newly appeared nearby items and notify in-app
             const newIds = new Set(nearby.map((n) => n.id));
             const prev = prevIdsRef.current;
             for (const id of newIds) {

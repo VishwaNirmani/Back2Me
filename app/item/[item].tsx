@@ -48,7 +48,6 @@ export default function ItemDetails() {
       alert("Please select a reason");
       return;
     }
-    // Submit report logic here
     alert(`Report submitted: ${selectedReason}`);
     setShowReportModal(false);
     setSelectedReason("");

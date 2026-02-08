@@ -55,7 +55,7 @@ export default function RegisterScreen() {
     });
   };
 
-  // ================= REGISTER =================
+  // REGISTER
   const handleRegister = async () => {
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert("Error", "All fields are required");

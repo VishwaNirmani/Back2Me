@@ -1,27 +1,36 @@
-import { auth, db } from '@/firebaseConfig';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { doc, getDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { auth, db } from "@/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  Image,
-} from 'react-native';
+} from "react-native";
 
-const THEME = '#2FB9B0';
+const THEME = "#2FB9B0";
 
 export default function Profile() {
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'lost' | 'found'>('lost');
+  const [activeTab, setActiveTab] = useState<"lost" | "found">("lost");
   const [lostItems, setLostItems] = useState<any[]>([]);
   const [foundItems, setFoundItems] = useState<any[]>([]);
 
@@ -34,20 +43,20 @@ export default function Profile() {
       loadUserData();
       loadUserReports();
       return () => {};
-    }, [])
+    }, []),
   );
 
   const loadUserData = async () => {
     try {
       const currentUser = auth.currentUser;
       if (currentUser) {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
           setUserData(userDoc.data());
         }
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error("Error loading user data:", error);
     } finally {
       setLoading(false);
     }
@@ -57,42 +66,44 @@ export default function Profile() {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        console.log('No user logged in');
+        console.log("No user logged in");
         return;
       }
 
-      console.log('Fetching reports for user:', currentUser.uid);
+      console.log("Fetching reports for user:", currentUser.uid);
 
-      // Query all user reports - single where clause, no composite index needed
       const reportsQuery = query(
-        collection(db, 'reports'),
-        where('userId', '==', currentUser.uid)
+        collection(db, "reports"),
+        where("userId", "==", currentUser.uid),
       );
-      
-      console.log('Executing query...');
+
+      console.log("Executing query...");
       const reportsSnapshot = await getDocs(reportsQuery);
-      console.log('Query successful, got', reportsSnapshot.docs.length, 'reports');
-      
-      const allReports = reportsSnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
+      console.log(
+        "Query successful, got",
+        reportsSnapshot.docs.length,
+        "reports",
+      );
+
+      const allReports: any = reportsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
       }));
 
-      // Backfill missing ownerName on user's reports
-      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
       const userInfo = userDoc.exists() ? userDoc.data() : null;
       const ownerName =
         userInfo?.fullName ||
         currentUser.displayName ||
         currentUser.email ||
-        'Anonymous';
+        "Anonymous";
 
       const missingOwner = reportsSnapshot.docs.filter((d) => {
         const data: any = d.data();
         return !data.ownerName;
       });
 
-      if (missingOwner.length > 0 && ownerName !== 'Anonymous') {
+      if (missingOwner.length > 0 && ownerName !== "Anonymous") {
         const batch = writeBatch(db);
         missingOwner.forEach((d) => {
           batch.update(d.ref, { ownerName });
@@ -102,16 +113,16 @@ export default function Profile() {
 
       // Filter and sort on client side
       const lost = allReports
-        .filter(item => item.type === 'Lost')
-        .sort((a, b) => {
+        .filter((item: any) => item.type === "Lost")
+        .sort((a: any, b: any) => {
           const aTime = a.createdAt?.seconds || 0;
           const bTime = b.createdAt?.seconds || 0;
           return bTime - aTime;
         });
-      
+
       const found = allReports
-        .filter(item => item.type === 'Found')
-        .sort((a, b) => {
+        .filter((item: any) => item.type === "Found")
+        .sort((a: any, b: any) => {
           const aTime = a.createdAt?.seconds || 0;
           const bTime = b.createdAt?.seconds || 0;
           return bTime - aTime;
@@ -120,66 +131,68 @@ export default function Profile() {
       setLostItems(lost);
       setFoundItems(found);
     } catch (error: any) {
-      console.error('Error loading reports:', error);
-      console.error('Error message:', error.message);
-      console.error('Error code:', error.code);
-      Alert.alert('Error', 'Failed to load your reports. Please try again.');
+      console.error("Error loading reports:", error);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      Alert.alert("Error", "Failed to load your reports. Please try again.");
     }
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          onPress: () => {},
-          style: 'cancel',
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        onPress: () => {},
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        onPress: async () => {
+          try {
+            await auth.signOut();
+            router.replace("/(auth)/login");
+          } catch (error) {
+            console.error("Logout error:", error);
+            Alert.alert("Error", "Failed to logout. Please try again.");
+          }
         },
-        {
-          text: 'Logout',
-          onPress: async () => {
-            try {
-              await auth.signOut();
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            }
-          },
-          style: 'destructive',
-        },
-      ]
-    );
+        style: "destructive",
+      },
+    ]);
   };
 
-  const handleDeleteReport = async (reportId: string, reportType: 'Lost' | 'Found') => {
-    Alert.alert(
-      'Delete Report',
-      'Are you sure you want to delete this item?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteDoc(doc(db, 'reports', reportId));
+  const handleDeleteReport = async (
+    reportId: string,
+    reportType: "Lost" | "Found",
+  ) => {
+    Alert.alert("Delete Report", "Are you sure you want to delete this item?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteDoc(doc(db, "reports", reportId));
 
-              if (reportType === 'Lost') {
-                setLostItems((prev) => prev.filter((item) => item.id !== reportId));
-              } else {
-                setFoundItems((prev) => prev.filter((item) => item.id !== reportId));
-              }
-            } catch (error) {
-              console.error('Error deleting report:', error);
-              Alert.alert('Error', 'Failed to delete the report. Please try again.');
+            if (reportType === "Lost") {
+              setLostItems((prev) =>
+                prev.filter((item) => item.id !== reportId),
+              );
+            } else {
+              setFoundItems((prev) =>
+                prev.filter((item) => item.id !== reportId),
+              );
             }
-          },
+          } catch (error) {
+            console.error("Error deleting report:", error);
+            Alert.alert(
+              "Error",
+              "Failed to delete the report. Please try again.",
+            );
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (loading) {
@@ -187,9 +200,9 @@ export default function Profile() {
       <SafeAreaView
         style={{
           flex: 1,
-          backgroundColor: '#F3F4F6',
-          justifyContent: 'center',
-          alignItems: 'center',
+          backgroundColor: "#F3F4F6",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
         <ActivityIndicator size="large" color={THEME} />
@@ -198,7 +211,7 @@ export default function Profile() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F3F4F6" }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* HEADER */}
         <View
@@ -208,7 +221,7 @@ export default function Profile() {
             paddingHorizontal: 16,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
             Profile
           </Text>
         </View>
@@ -216,11 +229,11 @@ export default function Profile() {
         {/* PROFILE CARD */}
         <View
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: "#fff",
             margin: 16,
             borderRadius: 16,
             padding: 20,
-            alignItems: 'center',
+            alignItems: "center",
           }}
         >
           {/* Avatar */}
@@ -229,47 +242,53 @@ export default function Profile() {
               width: 90,
               height: 90,
               borderRadius: 45,
-              backgroundColor: '#E0F2FE',
-              alignItems: 'center',
-              justifyContent: 'center',
+              backgroundColor: "#E0F2FE",
+              alignItems: "center",
+              justifyContent: "center",
               marginBottom: 12,
-              overflow: 'hidden',
+              overflow: "hidden",
             }}
           >
             {userData?.photoURL || auth.currentUser?.photoURL ? (
-              <Image source={{ uri: (userData?.photoURL || auth.currentUser?.photoURL) as string }} style={{ width: '100%', height: '100%' }} />
+              <Image
+                source={{
+                  uri: (userData?.photoURL ||
+                    auth.currentUser?.photoURL) as string,
+                }}
+                style={{ width: "100%", height: "100%" }}
+              />
             ) : (
               <Ionicons name="person" size={42} color={THEME} />
             )}
           </View>
 
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
-            {userData?.fullName || auth.currentUser?.displayName || 'User'}
+          <Text style={{ fontSize: 18, fontWeight: "700", color: "#111827" }}>
+            {userData?.fullName || auth.currentUser?.displayName || "User"}
           </Text>
 
-          <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
-            {userData?.city || 'Location not set'}
+          <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>
+            {userData?.city || "Location not set"}
           </Text>
 
-          <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+          <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>
             {userData?.email || auth.currentUser?.email}
           </Text>
 
           {userData?.phone ? (
-            <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+            <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>
               📞 {userData.phone}
             </Text>
           ) : null}
 
           {userData?.address ? (
-            <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+            <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>
               📍 {userData.address}
             </Text>
           ) : null}
 
           {/* EDIT PROFILE BUTTON */}
           <TouchableOpacity
-            onPress={() => router.push('/profile/edit')}
+            onPress={() => router.push("/profile/edit")}
             style={{
               marginTop: 16,
               paddingVertical: 10,
@@ -278,35 +297,37 @@ export default function Profile() {
               backgroundColor: THEME,
             }}
           >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Edit Profile</Text>
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              Edit Profile
+            </Text>
           </TouchableOpacity>
 
           {/* STATS */}
-          <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+          <View style={{ flexDirection: "row", marginTop: 20, gap: 12 }}>
             {[
-              { label: 'Lost', value: lostItems.length },
-              { label: 'Found', value: foundItems.length },
+              { label: "Lost", value: lostItems.length },
+              { label: "Found", value: foundItems.length },
             ].map((item) => (
               <View
                 key={item.label}
                 style={{
                   flex: 1,
-                  backgroundColor: '#F0FDFA',
+                  backgroundColor: "#F0FDFA",
                   borderRadius: 12,
                   paddingVertical: 12,
-                  alignItems: 'center',
+                  alignItems: "center",
                 }}
               >
                 <Text
                   style={{
                     fontSize: 16,
-                    fontWeight: '700',
+                    fontWeight: "700",
                     color: THEME,
                   }}
                 >
                   {item.value}
                 </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280' }}>
+                <Text style={{ fontSize: 12, color: "#6B7280" }}>
                   {item.label}
                 </Text>
               </View>
@@ -318,27 +339,26 @@ export default function Profile() {
         <View
           style={{
             marginHorizontal: 16,
-            backgroundColor: '#fff',
+            backgroundColor: "#fff",
             borderRadius: 14,
             padding: 6,
-            flexDirection: 'row',
+            flexDirection: "row",
           }}
         >
           <TouchableOpacity
-            onPress={() => setActiveTab('lost')}
+            onPress={() => setActiveTab("lost")}
             style={{
               flex: 1,
               paddingVertical: 10,
               borderRadius: 10,
-              backgroundColor:
-                activeTab === 'lost' ? THEME : 'transparent',
-              alignItems: 'center',
+              backgroundColor: activeTab === "lost" ? THEME : "transparent",
+              alignItems: "center",
             }}
           >
             <Text
               style={{
-                color: activeTab === 'lost' ? '#fff' : '#6B7280',
-                fontWeight: '700',
+                color: activeTab === "lost" ? "#fff" : "#6B7280",
+                fontWeight: "700",
               }}
             >
               My Lost Items
@@ -346,20 +366,19 @@ export default function Profile() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setActiveTab('found')}
+            onPress={() => setActiveTab("found")}
             style={{
               flex: 1,
               paddingVertical: 10,
               borderRadius: 10,
-              backgroundColor:
-                activeTab === 'found' ? THEME : 'transparent',
-              alignItems: 'center',
+              backgroundColor: activeTab === "found" ? THEME : "transparent",
+              alignItems: "center",
             }}
           >
             <Text
               style={{
-                color: activeTab === 'found' ? '#fff' : '#6B7280',
-                fontWeight: '700',
+                color: activeTab === "found" ? "#fff" : "#6B7280",
+                fontWeight: "700",
               }}
             >
               My Found Items
@@ -370,15 +389,21 @@ export default function Profile() {
         {/* TAB CONTENT */}
         <View
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: "#fff",
             margin: 16,
             borderRadius: 16,
             padding: 16,
           }}
         >
-          {activeTab === 'lost' ? (
+          {activeTab === "lost" ? (
             lostItems.length === 0 ? (
-              <Text style={{ color: '#6B7280', textAlign: 'center', paddingVertical: 20 }}>
+              <Text
+                style={{
+                  color: "#6B7280",
+                  textAlign: "center",
+                  paddingVertical: 20,
+                }}
+              >
                 🔴 No lost items reported yet
               </Text>
             ) : (
@@ -387,36 +412,50 @@ export default function Profile() {
                   <ItemCard
                     key={item.id}
                     item={item}
-                    onEdit={() => router.push({ pathname: '/report/edit/[id]', params: { id: item.id } })}
-                    onDelete={() => handleDeleteReport(item.id, 'Lost')}
+                    onEdit={() =>
+                      router.push({
+                        pathname: "/report/edit/[id]",
+                        params: { id: item.id },
+                      })
+                    }
+                    onDelete={() => handleDeleteReport(item.id, "Lost")}
                   />
                 ))}
               </View>
             )
+          ) : foundItems.length === 0 ? (
+            <Text
+              style={{
+                color: "#6B7280",
+                textAlign: "center",
+                paddingVertical: 20,
+              }}
+            >
+              🟢 No found items reported yet
+            </Text>
           ) : (
-            foundItems.length === 0 ? (
-              <Text style={{ color: '#6B7280', textAlign: 'center', paddingVertical: 20 }}>
-                🟢 No found items reported yet
-              </Text>
-            ) : (
-              <View style={{ gap: 12 }}>
-                {foundItems.map((item) => (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    onEdit={() => router.push({ pathname: '/report/edit/[id]', params: { id: item.id } })}
-                    onDelete={() => handleDeleteReport(item.id, 'Found')}
-                  />
-                ))}
-              </View>
-            )
+            <View style={{ gap: 12 }}>
+              {foundItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onEdit={() =>
+                    router.push({
+                      pathname: "/report/edit/[id]",
+                      params: { id: item.id },
+                    })
+                  }
+                  onDelete={() => handleDeleteReport(item.id, "Found")}
+                />
+              ))}
+            </View>
           )}
         </View>
 
         {/* LOGOUT */}
         <View
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: "#fff",
             margin: 16,
             borderRadius: 16,
             paddingVertical: 6,
@@ -452,8 +491,8 @@ const SettingItem = ({
   <TouchableOpacity
     onPress={onPress}
     style={{
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingVertical: 14,
       paddingHorizontal: 16,
     }}
@@ -461,15 +500,15 @@ const SettingItem = ({
     <Ionicons
       name={icon}
       size={20}
-      color={danger ? '#DC2626' : '#6B7280'}
+      color={danger ? "#DC2626" : "#6B7280"}
       style={{ width: 24 }}
     />
     <Text
       style={{
         fontSize: 14,
         marginLeft: 12,
-        color: danger ? '#DC2626' : '#374151',
-        fontWeight: danger ? '600' : '500',
+        color: danger ? "#DC2626" : "#374151",
+        fontWeight: danger ? "600" : "500",
       }}
     >
       {label}
@@ -477,57 +516,100 @@ const SettingItem = ({
   </TouchableOpacity>
 );
 
-const ItemCard = ({ item, onEdit, onDelete }: { item: any; onEdit: () => void; onDelete: () => void }) => {
+const ItemCard = ({
+  item,
+  onEdit,
+  onDelete,
+}: {
+  item: any;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
   const itemDate = item.date?.toDate ? item.date.toDate() : new Date(item.date);
-  
+
   return (
     <View
       style={{
-        backgroundColor: '#F9FAFB',
+        backgroundColor: "#F9FAFB",
         borderRadius: 12,
         padding: 14,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: "#E5E7EB",
       }}
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+        }}
+      >
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 4 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "700",
+              color: "#111827",
+              marginBottom: 4,
+            }}
+          >
             {item.itemName}
           </Text>
-          <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 6 }} numberOfLines={2}>
+          <Text
+            style={{ fontSize: 13, color: "#6B7280", marginBottom: 6 }}
+            numberOfLines={2}
+          >
             {item.description}
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              marginBottom: 2,
+            }}
+          >
             <Ionicons name="location-outline" size={14} color="#6B7280" />
-            <Text style={{ fontSize: 12, color: '#6B7280' }}>{item.location}</Text>
+            <Text style={{ fontSize: 12, color: "#6B7280" }}>
+              {item.location}
+            </Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons name="calendar-outline" size={14} color="#6B7280" />
-            <Text style={{ fontSize: 12, color: '#6B7280' }}>
+            <Text style={{ fontSize: 12, color: "#6B7280" }}>
               {itemDate.toLocaleDateString()}
             </Text>
           </View>
           {item.category && (
             <View style={{ marginTop: 6 }}>
-              <Text style={{ fontSize: 11, color: THEME, backgroundColor: '#F0FDFA', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start' }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: THEME,
+                  backgroundColor: "#F0FDFA",
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 6,
+                  alignSelf: "flex-start",
+                }}
+              >
                 {item.category}
               </Text>
             </View>
           )}
         </View>
-        <View style={{ alignItems: 'flex-end', marginLeft: 10 }}>
+        <View style={{ alignItems: "flex-end", marginLeft: 10 }}>
           <TouchableOpacity
             onPress={onEdit}
             style={{
               paddingHorizontal: 8,
               paddingVertical: 6,
               borderRadius: 8,
-              backgroundColor: '#E0F2FE',
+              backgroundColor: "#E0F2FE",
               marginBottom: 8,
             }}
           >
-            <Text style={{ color: '#0369A1', fontSize: 12, fontWeight: '600' }}>
+            <Text style={{ color: "#0369A1", fontSize: 12, fontWeight: "600" }}>
               Edit
             </Text>
           </TouchableOpacity>
@@ -537,11 +619,11 @@ const ItemCard = ({ item, onEdit, onDelete }: { item: any; onEdit: () => void; o
               paddingHorizontal: 8,
               paddingVertical: 6,
               borderRadius: 8,
-              backgroundColor: '#FEE2E2',
+              backgroundColor: "#FEE2E2",
               marginBottom: 8,
             }}
           >
-            <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '600' }}>
+            <Text style={{ color: "#DC2626", fontSize: 12, fontWeight: "600" }}>
               Delete
             </Text>
           </TouchableOpacity>

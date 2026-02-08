@@ -1,7 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
-import { addDoc, collection, serverTimestamp, getDoc, doc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useState } from "react";
 import {
@@ -34,8 +40,8 @@ export default function ReportScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleDateChange = (_event: any, selectedDate?: Date) => {
-    if (selectedDate) setDate(selectedDate); // update date
-    setShowPicker(false); // close picker after select
+    if (selectedDate) setDate(selectedDate);
+    setShowPicker(false);
   };
 
   const resetForm = () => {
@@ -282,7 +288,6 @@ export default function ReportScreen() {
               )}
             </View>
 
-            {/* Add Photos (UI Only) */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Add Photos</Text>
               <View style={styles.photoContainer}>
@@ -329,7 +334,7 @@ export default function ReportScreen() {
   );
 }
 
-// ---------------- STYLES ----------------
+//  STYLES
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F3F4F6" },
   header: {

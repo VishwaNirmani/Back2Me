@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router"; // Import hooks
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
@@ -18,16 +18,13 @@ const THEME = "#2FB9B0";
 
 export default function ItemDetails() {
   const router = useRouter();
-  // Get params from navigation
   const params = useLocalSearchParams();
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
 
-  // Construct item object from params or fallback
   const [fetched, setFetched] = useState<any>(null);
 
-  // Helper: human readable time ago
   const timeAgo = (date: Date) => {
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
@@ -39,7 +36,6 @@ export default function ItemDetails() {
     return `${days}d ago`;
   };
 
-  // Fetch full report from Firestore when id param is present
   useEffect(() => {
     const id = params.id as string | undefined;
     if (!id) return;
@@ -86,13 +82,12 @@ export default function ItemDetails() {
     fetchDoc();
   }, [params.id]);
 
-  // Construct item object from fetched data, params or fallback
   const item = fetched || {
     title: (params.title as string) || "Unknown Item",
     status: (params.status as string) || "Lost",
     category: (params.category as string) || "General",
     location: (params.location as string) || "Unknown Location",
-    date: (params.time as string) || "Recently", // 'time' maps to 'date' in UI
+    date: (params.time as string) || "Recently",
     description:
       (params.description as string) ||
       "No description provided for this item.",
@@ -119,7 +114,7 @@ export default function ItemDetails() {
       alert("Please select a reason");
       return;
     }
-    // Submit report logic here
+
     alert(`Report submitted: ${selectedReason}`);
     setShowReportModal(false);
     setSelectedReason("");

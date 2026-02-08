@@ -31,7 +31,7 @@ export default function LoginScreen() {
     password: "",
   });
 
-  // ================= VALIDATION =================
+  // VALIDATION
   const validateForm = () => {
     let isValid = true;
     const newErrors = { email: "", password: "" };
@@ -56,7 +56,7 @@ export default function LoginScreen() {
     return isValid;
   };
 
-  // ================= LOGIN =================
+  // LOGIN
   const handleLogin = async () => {
     if (!validateForm()) return;
 
@@ -102,7 +102,7 @@ export default function LoginScreen() {
     }
   };
 
-  // ================= UI =================
+  // UI
   return (
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -209,7 +209,7 @@ export default function LoginScreen() {
   );
 }
 
-// ================= STYLES =================
+// STYLES
 const styles = StyleSheet.create({
   container: {
     flex: 1,

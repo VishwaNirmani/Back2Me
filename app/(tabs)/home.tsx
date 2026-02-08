@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router"; // Import useRouter
+import { useRouter } from "expo-router";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  FlatList, // Import FlatList
+  FlatList,
   Image,
   SafeAreaView,
   ScrollView,
@@ -16,20 +16,16 @@ import { db } from "../../firebaseConfig";
 
 const THEME = "#2FB9B0";
 
-// categories will be derived from reports at runtime
-
-// Placeholder image shown when report has no image
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/300?text=No+Image";
 
 export default function Home() {
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const [tab, setTab] = useState<"Lost" | "Found">("Lost");
   const [category, setCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState(""); // Add search state
+  const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper: human readable time ago
   const timeAgo = (date: Date) => {
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
@@ -41,7 +37,6 @@ export default function Home() {
     return `${days}d ago`;
   };
 
-  // Subscribe to `reports` collection in Firestore
   useEffect(() => {
     setLoading(true);
     const q = query(collection(db, "reports"), orderBy("createdAt", "desc"));
@@ -96,7 +91,6 @@ export default function Home() {
       const title = (i.title || "").toString().toLowerCase();
       const desc = (i.description || "").toString().toLowerCase();
 
-      // include only when the selected category keyword appears in category/title/description
       matchesCategory =
         (catField && catField.includes(lowerSelected)) ||
         (title && title.includes(lowerSelected)) ||
@@ -105,13 +99,9 @@ export default function Home() {
     const q = searchQuery.trim().toLowerCase();
     const matchesSearch =
       !q ||
-      // match item name / title
       (i.title && i.title.toLowerCase().includes(q)) ||
-      // match location
       (i.location && i.location.toLowerCase().includes(q)) ||
-      // match description
       (i.description && i.description.toLowerCase().includes(q)) ||
-      // match owner/name
       (i.owner && i.owner.toLowerCase().includes(q));
 
     return matchesTab && matchesCategory && matchesSearch;
@@ -214,10 +204,6 @@ export default function Home() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F3F4F6" }}>
-      {/* 
-        Using FlatList for the feed part, but since we have a complex header (Categories, Tabs, Search),
-        we should use ListHeaderComponent to render them so everything scrolls together.
-      */}
       <FlatList
         data={filteredItems}
         renderItem={renderItem}
